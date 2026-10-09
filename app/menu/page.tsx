@@ -32,8 +32,11 @@ export default async function Menu() {
             <h2><span className="cat-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>{c.nombre}</h2>
             <div className="dishes">{platillos.filter(p => p.categoria_id === c.id).map(p => <article key={p.id} className="dish">
                 {p.foto_url && <img src={p.foto_url} alt={p.nombre} loading="lazy"/>}
-                <div><div className="dish-title"><h3>{p.nombre}</h3><span>{dinero(p.precio)}</span></div>{p.descripcion && <p>{p.descripcion}</p>}
-                    <div className="dish-nota">{notas[p.id] ? <><Estrellas valor={promedio(notas[p.id])}/><small>{promedio(notas[p.id]).toFixed(1)} ({notas[p.id].length})</small></> : null}<Link href={`/resenas?platillo=${p.id}`}>Opinar</Link></div>
+                <div className="dish-cuerpo">
+                    <h3>{p.nombre}</h3>
+                    {notas[p.id] && <div className="dish-nota"><Estrellas valor={promedio(notas[p.id])}/><small>{promedio(notas[p.id]).toFixed(1)} · {notas[p.id].length} {notas[p.id].length === 1 ? "reseña" : "reseñas"}</small></div>}
+                    {p.descripcion && <p>{p.descripcion}</p>}
+                    <div className="dish-pie"><span className="dish-precio">{dinero(p.precio)}</span><Link href={`/resenas?platillo=${p.id}`}>Opinar</Link></div>
                 </div>
             </article>)}</div>
         </section>)}

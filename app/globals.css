@@ -176,9 +176,8 @@ button { font: inherit; cursor: pointer; }
 .resenas-portada .resena:nth-child(2) { transform: translateY(28px) rotate(.8deg); }
 .resenas-portada .resena:nth-child(odd) { transform: rotate(-.8deg); }
 
-.dish-nota { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; }
+.dish-nota { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: 13px; }
 .dish-nota small { color: var(--muted); }
-.dish-nota a { margin-left: auto; color: var(--accent-text); font-weight: 700; text-decoration: none; }
 
 /* Visítanos: tarjetas sueltas, ligeramente giradas. */
 .visitanos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; padding-top: 70px; }
@@ -208,14 +207,18 @@ button { font: inherit; cursor: pointer; }
 .category h2::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 2px; background: linear-gradient(90deg, var(--accent-text), var(--accent) 30%, transparent); }
 .cat-num { font-size: .55em; color: transparent; -webkit-text-stroke: 1px var(--accent-text); }
 .dishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-.dish { position: relative; display: flex; gap: 16px; padding: 18px 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); transition: transform .25s, border-color .25s, box-shadow .25s; }
+.dish { position: relative; display: flex; gap: 14px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); transition: transform .25s, border-color .25s, box-shadow .25s; }
 .dish:hover { transform: translateY(-4px); border-color: rgba(240, 97, 79, .45); box-shadow: 0 18px 40px -22px rgba(240, 97, 79, .6); }
-.dish img { width: 96px; height: 96px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
-.dish > div { flex: 1; }
-.dish-title { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-.dish h3 { font-size: 18px; margin: 0; }
-.dish-title span { font-weight: 700; white-space: nowrap; color: var(--accent-text); }
+.dish img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
+/* min-width: 0 deja que el texto se ajuste al ancho de la tarjeta en vez de empujar el precio hacia afuera. */
+.dish-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dish h3 { font-size: 18px; margin: 0; overflow-wrap: anywhere; }
 .dish p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+/* Precio y "Opinar" siempre al pie, alineados aunque la descripción sea más corta o más larga. */
+.dish-pie { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; margin-top: auto; padding-top: 12px; }
+.dish-precio { font: 17px var(--font-titulos), Impact, sans-serif; white-space: nowrap; background: var(--fuego); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dish-pie a { margin-left: auto; color: var(--accent-text); font-size: 13px; font-weight: 700; text-decoration: none; padding: 4px 12px; border: 1px solid rgba(240, 97, 79, .4); border-radius: 999px; transition: background .2s, color .2s, border-color .2s; }
+.dish-pie a:hover { background: var(--fuego); border-color: transparent; color: #fff; }
 
 /* ---------- Formularios y administración ---------- */
 .card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
@@ -289,6 +292,7 @@ label.check:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
   .destacado:nth-child(3) { margin-left: 4%; }
 }
 @media (max-width: 640px) {
+  .dish { padding: 14px; }
   .nota-portada { grid-column: 1; grid-row: auto; justify-items: start; margin-top: 10px; }
   .resenas-portada .resena:nth-child(n) { transform: none; }
   .resena-admin { grid-template-columns: 1fr; }
@@ -309,6 +313,11 @@ label.check:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
   .form .row { grid-template-columns: 1fr 1fr; }
   .res { grid-template-columns: 60px 1fr; }
   .res > :last-child { grid-column: 1 / -1; }
+}
+/* Teléfonos muy angostos: foto más chica para que precio y "Opinar" quepan en una línea. */
+@media (max-width: 379px) {
+  .dish { gap: 12px; padding: 12px; }
+  .dish img { width: 68px; height: 68px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
