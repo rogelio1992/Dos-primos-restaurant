@@ -107,7 +107,7 @@ button { font: inherit; cursor: pointer; }
   .galeria[data-n="4"] .galeria-item:nth-child(2) { grid-column: span 2; grid-row: span 1; }
   .galeria[data-n="4"] .galeria-item:nth-child(n + 3), .galeria[data-n="5"] .galeria-item:nth-child(n + 2) { grid-column: span 1; grid-row: span 1; }
 }
-.galeria-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s, filter .6s; filter: saturate(.92); }
+.galeria-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform .6s, filter .6s; filter: saturate(.92); }
 .galeria-item::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); background: linear-gradient(to top, rgba(22, 18, 17, .75), transparent 45%); opacity: .55; transition: opacity .4s, box-shadow .4s; pointer-events: none; }
 .galeria-item:hover img, .galeria-item:focus-visible img { transform: scale(1.06); filter: saturate(1.1); }
 .galeria-item:hover::after, .galeria-item:focus-visible::after { opacity: 1; box-shadow: inset 0 0 0 2px rgba(240, 97, 79, .7); }
@@ -117,8 +117,10 @@ button { font: inherit; cursor: pointer; }
 
 /* Visor a pantalla completa */
 .visor { position: fixed; inset: 0; z-index: 60; background: rgba(10, 8, 7, .94); display: grid; grid-template-rows: 1fr auto; padding: 20px; animation: aparecer .25s ease-out; }
-.visor figure { margin: 0; min-height: 0; display: grid; place-items: center; background: center / contain no-repeat; }
-.visor figure img { max-width: 100%; max-height: calc(100vh - 110px); object-fit: contain; border-radius: 12px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .9); }
+.visor figure { margin: 0; min-height: 0; display: grid; place-items: center; }
+/* Mismo ancho/alto que la miniatura: la transformación miniatura → foto grande no se deforma. border-radius aquí para que se conserve durante la transición. */
+.visor-foto { position: relative; aspect-ratio: var(--proporcion); width: min(100%, calc((100vh - 110px) * var(--proporcion))); max-height: calc(100vh - 110px); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .9); }
+.visor-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .visor-barra { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 14px; color: var(--muted); font-size: 14px; }
 .visor-barra span { margin-right: auto; }
 .visor-barra button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 18px; }
@@ -312,4 +314,39 @@ label.check:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .brasas { display: none; }
   html { scroll-behavior: auto; }
+}
+
+/* ---------- View Transitions (<ViewTransition> de React) ---------- */
+:root { --vt-salida: 150ms; --vt-entrada: 210ms; --vt-movimiento: 400ms; }
+@keyframes vt-fundido { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-deslizar { from { translate: var(--vt-desplazamiento); } to { translate: 0; } }
+@keyframes vt-desenfoque { 30% { filter: blur(3px); } }
+
+/* Cambio de página (navegación lateral del header): fundido corto. */
+::view-transition-old(.pagina-sale) { animation: var(--vt-salida) ease-in both vt-fundido reverse; }
+::view-transition-new(.pagina-entra) { animation: var(--vt-entrada) ease-out var(--vt-salida) both vt-fundido; }
+
+/* Header: no se anima al cambiar de página (persistente en el layout). */
+::view-transition-group(encabezado) { animation: none; }
+
+/* Galería: la miniatura se transforma en la foto del visor y vuelve al cerrarlo. */
+::view-transition-group(.foto-morph) { animation-duration: var(--vt-movimiento); animation-timing-function: cubic-bezier(.3, 0, .1, 1); }
+::view-transition-image-pair(.foto-morph) { animation-name: vt-desenfoque; }
+
+/* El fondo oscuro del visor aparece y desaparece. */
+::view-transition-new(.visor-entra) { animation: 250ms ease-out both vt-fundido; }
+::view-transition-old(.visor-sale) { animation: 200ms ease-in both vt-fundido reverse; }
+
+/* Visor: anterior/siguiente es una secuencia ordenada; la siguiente entra por la derecha. */
+::view-transition-new(.foto-desde-derecha) { --vt-desplazamiento: 80px; animation: var(--vt-entrada) ease-out var(--vt-salida) both vt-fundido, var(--vt-movimiento) ease-in-out both vt-deslizar; }
+::view-transition-old(.foto-hacia-izquierda) { --vt-desplazamiento: -80px; animation: var(--vt-salida) ease-in both vt-fundido reverse, var(--vt-movimiento) ease-in-out both vt-deslizar reverse; }
+::view-transition-new(.foto-desde-izquierda) { --vt-desplazamiento: -80px; animation: var(--vt-entrada) ease-out var(--vt-salida) both vt-fundido, var(--vt-movimiento) ease-in-out both vt-deslizar; }
+::view-transition-old(.foto-hacia-derecha) { --vt-desplazamiento: 80px; animation: var(--vt-salida) ease-in both vt-fundido reverse, var(--vt-movimiento) ease-in-out both vt-deslizar reverse; }
+
+/* Panel → Galería: las fotos nuevas aparecen y las borradas se desvanecen (al reordenar, se deslizan solas). */
+::view-transition-new(.tarjeta-entra) { animation: var(--vt-entrada) ease-out both vt-fundido; }
+::view-transition-old(.tarjeta-sale) { animation: var(--vt-salida) ease-in both vt-fundido reverse; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) { animation-duration: 0s !important; animation-delay: 0s !important; }
 }

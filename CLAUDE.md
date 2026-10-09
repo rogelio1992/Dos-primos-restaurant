@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Restaurant site for "Dos Primos": public menu, online reservations and an admin panel. Next.js 14 (App Router) + Supabase, deployed on Vercel. The UI, code identifiers, DB tables/columns and user-facing messages are all in Spanish — keep new code consistent with that (`platillos`, `reservaciones`, `avisar`, etc.).
+Restaurant site for "Dos Primos": public menu, online reservations and an admin panel. Next.js 16 (App Router, Turbopack, React 19) + Supabase, deployed on Vercel. The UI, code identifiers, DB tables/columns and user-facing messages are all in Spanish — keep new code consistent with that (`platillos`, `reservaciones`, `avisar`, etc.).
 
 ## Commands
 
 - `npm run dev` — local dev server (needs `.env.local` copied from `.env.example`)
-- `npm run build` — production build; also the main type check (`npx tsc --noEmit` for types only)
-- `npm run lint` — `next lint` (no ESLint config is committed yet, so the first run prompts to set one up)
+- `npm run build` — production build (type-checks but no longer lints; `npx tsc --noEmit` for types only)
+- `npm run lint` — ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`). `next lint` no longer exists in Next 16. ESLint 10 is not yet compatible with the bundled `eslint-plugin-react`.
+- Node 22 (`.nvmrc`; run `nvm use`).
 
 There is no test suite.
 
@@ -33,6 +34,18 @@ There is no test suite.
 
 **Images** live in public Storage buckets with admin-only writes (RLS on `storage.objects`): `platillos` (dish photos, ≤800 px) and `galeria` (venue photos, table `galeria`, stored twice: ≤1400 px full + ≤640 px `miniatura_url`). `/admin` compresses in the browser with `lib/imagenes.ts` before upload and deletes Storage objects when a photo is replaced or its row deleted. Public pages must show only the light version and load the full one on demand (the home gallery mosaic uses thumbnails; the full image loads only in the viewer) — many visitors are on expensive mobile data in Cuba.
 
+**View transitions** (React `<ViewTransition>`, see `.claude/skills/vercel-react-view-transitions`): each public page wraps its root in `<TransicionPagina>` (fade; the header links are lateral, so no directional slides) — never add a layout-level VT around `{children}`, it silently disables the page ones. The header is pinned with `viewTransitionName: "encabezado"`. In `app/galeria.tsx` the thumbnail↔viewer morph relies on tiles dropping their `name` while the viewer is open (a name may be mounted only once), prev/next use `addTransitionType` for directional slides, and the full-size viewer image is `loading="lazy"` on purpose: otherwise React holds the transition until it downloads. All CSS classes live at the end of `globals.css`.
+
 ## Environment
 
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (the last must never get a `NEXT_PUBLIC_` prefix). Configured in Vercel for production.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

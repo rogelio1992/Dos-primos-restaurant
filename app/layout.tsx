@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import Link from "next/link";
 import {RESTAURANTE} from "../lib/restaurante";
 import {getAjustes} from "../lib/ajustes";
+import Analitica from "./analitica";
 import {Archivo_Black} from "next/font/google";
 import "./globals.css";
 
@@ -15,12 +16,13 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
     const {reservaciones_activas} = await getAjustes();
-    return <html lang="es" className={titulos.variable}><body>
-        <header className="header">
+    return <html lang="es" className={titulos.variable} data-scroll-behavior="smooth"><body>
+        <header className="header" style={{viewTransitionName: "encabezado"}}>
             <Link href="/" className="brand"><img src="/logo.webp" alt={RESTAURANTE.nombre} width={344} height={193}/></Link>
             <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link><Link href="/resenas">Reseñas</Link>{reservaciones_activas && <Link className="button" href="/reservar">Reservar mesa</Link>}</nav>
         </header>
         {children}
         <footer className="footer"><span>{RESTAURANTE.nombre} · {RESTAURANTE.lema}</span><Link href="/admin/login">Acceso administración</Link></footer>
+        <Analitica/>
     </body></html>;
 }

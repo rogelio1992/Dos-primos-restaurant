@@ -7,6 +7,7 @@ import Galeria from "./galeria";
 import Estrellas from "./estrellas";
 import TarjetaResena from "./resenas/tarjeta";
 import {getAjustes} from "../lib/ajustes";
+import TransicionPagina from "./transicion-pagina";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function Inicio() {
         if (!e.error && e.data) estrellas = e.data.map(x => x.estrellas);
     }
     const franja = [...FRASES, ...FRASES];
-    return <main>
+    return <TransicionPagina><main>
         <section className="hero-fuego">
             <Brasas/>
             <div className="hero-inner">
@@ -80,5 +81,5 @@ export default async function Inicio() {
         <div className="section">
             <Mapa/>
         </div>
-    </main>;
+    </main></TransicionPagina>;
 }

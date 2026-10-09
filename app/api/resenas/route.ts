@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Huella de la conexión (no se guarda la IP): máximo POR_HORA reseñas por hora desde el mismo lugar.
-        const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || request.ip || "";
+        const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || request.headers.get("x-real-ip") || "";
         const ip_hash = createHash("sha256").update(`${ip}|${process.env.SUPABASE_SERVICE_ROLE_KEY}`).digest("hex").slice(0, 32);
         const haceUnaHora = new Date(Date.now() - 3600_000).toISOString();
         const {count} = await db.from("resenas").select("id", {count: "exact", head: true}).eq("ip_hash", ip_hash).gte("created_at", haceUnaHora);

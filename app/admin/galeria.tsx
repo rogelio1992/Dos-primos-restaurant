@@ -1,5 +1,5 @@
 "use client";
-import {useCallback, useEffect, useState} from "react";
+import {startTransition, useCallback, useEffect, useState, ViewTransition} from "react";
 import {getSupabaseClient} from "../../lib/supabase";
 import {comprimir, extension, rutaEnBucket} from "../../lib/imagenes";
 import {FotoGaleria, RESTAURANTE} from "../../lib/restaurante";
@@ -11,7 +11,9 @@ export default function GaleriaEditor({avisar}: {avisar: (texto: string) => void
     const [fotos, setFotos] = useState<FotoGaleria[]>([]), [progreso, setProgreso] = useState("");
     const cargar = useCallback(async () => {
         const {data, error} = await db.from("galeria").select("*").order("orden").order("id");
-        if (error) avisar("No se pudo cargar la galería. Revisa que el SQL de la galería esté ejecutado en Supabase."); else setFotos(data);
+        if (error) return avisar("No se pudo cargar la galería. Revisa que el SQL de la galería esté ejecutado en Supabase.");
+        // En una Transition: al reordenar, cada tarjeta se desliza a su nuevo lugar (ver <ViewTransition key> abajo).
+        startTransition(() => setFotos(data));
     }, [db, avisar]);
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -88,7 +90,7 @@ export default function GaleriaEditor({avisar}: {avisar: (texto: string) => void
             <p>Puedes elegir varias a la vez. La primera sale grande en la portada; mezcla fotos horizontales y verticales. Se reducen antes de subirlas para ahorrar datos.</p>
             {libres <= 0 && <p className="notice">Llegaste al límite de {RESTAURANTE.maxGaleria} fotos. Borra alguna para subir otra.</p>}
         </div>
-        <div className="galeria-admin">{fotos.map((f, i) => <article key={f.id}>
+        <div className="galeria-admin">{fotos.map((f, i) => <ViewTransition key={f.id} enter="tarjeta-entra" exit="tarjeta-sale"><article>
             <img src={f.miniatura_url} alt={f.descripcion} loading="lazy"/>
             {i === 0 && <span className="insignia">Grande</span>}
             <input defaultValue={f.descripcion} placeholder="Descripción (opcional)" maxLength={120} onBlur={e => guardarDescripcion(f, e.target.value)} aria-label="Descripción de la foto"/>
@@ -97,7 +99,7 @@ export default function GaleriaEditor({avisar}: {avisar: (texto: string) => void
                 <button type="button" className="text-link" disabled={i === fotos.length - 1} onClick={() => mover(i, 1)} aria-label="Mover después">→</button>
                 <button type="button" className="text-link danger" onClick={() => borrar(f)}>Borrar</button>
             </div>
-        </article>)}</div>
+        </article></ViewTransition>)}</div>
         {!fotos.length && <p className="empty">Todavía no hay fotos. Mientras la galería esté vacía, la portada no muestra esta sección.</p>}
     </section>;
 }

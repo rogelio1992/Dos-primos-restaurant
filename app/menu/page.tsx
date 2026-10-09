@@ -3,6 +3,7 @@ import {getSupabasePublic} from "../../lib/supabase-public";
 import {Categoria, Platillo, dinero, promedio} from "../../lib/restaurante";
 import {getAjustes} from "../../lib/ajustes";
 import Estrellas from "../estrellas";
+import TransicionPagina from "../transicion-pagina";
 
 export const dynamic = "force-dynamic";
 export const metadata = {title: "Menú | Dos Primos"};
@@ -23,7 +24,7 @@ export default async function Menu() {
         if (!r.error && r.data) for (const {platillo_id, estrellas} of r.data) (notas[platillo_id] ??= []).push(estrellas);
     }
     const conPlatillos = categorias.filter(c => platillos.some(p => p.categoria_id === c.id));
-    return <main className="section">
+    return <TransicionPagina><main className="section">
         <p className="eyebrow">NUESTRO MENÚ</p>
         <h1>Menú</h1>
         {conPlatillos.length > 0 && <nav className="chips" aria-label="Categorías">{conPlatillos.map(c => <a key={c.id} href={`#cat-${c.id}`}>{c.nombre}</a>)}</nav>}
@@ -37,5 +38,5 @@ export default async function Menu() {
             </article>)}</div>
         </section>)}
         {!conPlatillos.length && <p className="empty">El menú se está preparando.{(await getAjustes()).reservaciones_activas && <> Mientras tanto, <Link href="/reservar">reserva tu mesa</Link>.</>}</p>}
-    </main>;
+    </main></TransicionPagina>;
 }

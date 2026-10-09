@@ -3,11 +3,13 @@ import {RESENA_COLUMNAS, Resena, promedio} from "../../lib/restaurante";
 import Estrellas from "../estrellas";
 import FormularioResena from "./formulario";
 import TarjetaResena from "./tarjeta";
+import TransicionPagina from "../transicion-pagina";
 
 export const dynamic = "force-dynamic";
 export const metadata = {title: "Reseñas | Dos Primos"};
 
-export default async function Resenas({searchParams}: {searchParams: {platillo?: string}}) {
+export default async function Resenas({searchParams}: {searchParams: Promise<{platillo?: string}>}) {
+    const {platillo} = await searchParams;
     let resenas: Resena[] = [], platillos: {id: number; nombre: string}[] = [], todas: number[] = [];
     const db = getSupabasePublic();
     if (db) {
@@ -22,8 +24,8 @@ export default async function Resenas({searchParams}: {searchParams: {platillo?:
         if (!e.error && e.data) todas = e.data.map(x => x.estrellas);
     }
     const media = promedio(todas);
-    const inicial = platillos.some(p => String(p.id) === searchParams.platillo) ? String(searchParams.platillo) : "";
-    return <main className="section">
+    const inicial = platillos.some(p => String(p.id) === platillo) ? String(platillo) : "";
+    return <TransicionPagina><main className="section">
         <p className="eyebrow">LO QUE DICEN</p>
         <h1>Reseñas</h1>
         <div className="resenas-layout">
@@ -42,5 +44,5 @@ export default async function Resenas({searchParams}: {searchParams: {platillo?:
                 {!resenas.length && <p className="empty">Todavía no hay reseñas publicadas. ¡Sé el primero en contarnos qué te pareció!</p>}
             </div>
         </div>
-    </main>;
+    </main></TransicionPagina>;
 }
