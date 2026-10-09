@@ -2,6 +2,7 @@ import Link from "next/link";
 import {getSupabasePublic} from "../lib/supabase-public";
 import {Platillo, RESTAURANTE, dinero, whatsappLink} from "../lib/restaurante";
 import Brasas from "./brasas";
+import Mapa from "./mapa";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function Inicio() {
                     <p className="intro">Platillos hechos al momento, en un lugar para venir con la familia y los amigos.</p>
                     <div className="actions"><Link className="button" href="/reservar">Reservar mesa</Link><Link className="text-link" href="/menu">Ver el menú →</Link></div>
                 </div>
-                <div className="hero-marca"><img src="/logo.png" alt="" width={344} height={193}/></div>
+                <div className="hero-marca"><img src="/logo.webp" alt="" width={344} height={193}/></div>
             </div>
         </section>
 
@@ -50,10 +51,7 @@ export default async function Inicio() {
             <Link href="/reservar" className="tarjeta tarjeta-fuego"><p className="eyebrow">¿VIENEN EN GRUPO?</p><h2>Aparta tu mesa</h2><span>Reservar →</span></Link>
         </section>
         <div className="section">
-            <a className="mapa" href={RESTAURANTE.mapa} target="_blank" rel="noreferrer" aria-label={`Abrir ${RESTAURANTE.direccion} en Google Maps`}>
-                <iframe title={`Mapa: ${RESTAURANTE.direccion}`} src={`https://www.google.com/maps?q=${RESTAURANTE.coordenadas}&z=16&output=embed`} loading="lazy" tabIndex={-1}/>
-                <span className="mapa-pin" aria-hidden="true"/>
-            </a>
+            <Mapa/>
         </div>
     </main>;
 }

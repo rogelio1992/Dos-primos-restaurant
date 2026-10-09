@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap');
-
 /* Colores del logo: letras crema sobre fondo carbón, flama roja. --accent es para fondos (botones); --accent-text para texto rojo sobre el fondo oscuro. */
 :root {
   --ink: #ece4d8; --paper: #161211; --soft: #221b19; --surface: #1d1715; --line: #3a2f2b; --muted: #a8998c;
@@ -9,11 +7,11 @@
 }
 * { box-sizing: border-box; }
 html { overflow-x: clip; scroll-behavior: smooth; }
-body { margin: 0; color: var(--ink); font: 15px/1.6 'DM Sans', sans-serif; background: radial-gradient(900px 500px at 85% 110%, rgba(179, 20, 31, .14), transparent 70%) fixed, var(--paper); }
+body { margin: 0; color: var(--ink); font: 15px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: radial-gradient(900px 500px at 85% 110%, rgba(179, 20, 31, .14), transparent 70%) fixed, var(--paper); }
 /* Grano sutil encima de todo, para que el fondo no se vea plano. */
 body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: .05; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 a { color: inherit; }
-h1, h2, h3 { font-family: 'Archivo Black', sans-serif; font-weight: 400; line-height: 1.05; margin: 0 0 12px; }
+h1, h2, h3 { font-family: var(--font-titulos), Impact, sans-serif; font-weight: 400; line-height: 1.05; margin: 0 0 12px; }
 h1, h2 { text-transform: uppercase; letter-spacing: .5px; }
 h1 { font-size: clamp(38px, 6vw, 76px); }
 h2 { font-size: clamp(22px, 3vw, 30px); }
@@ -21,7 +19,7 @@ button { font: inherit; cursor: pointer; }
 ::selection { background: var(--accent); color: #fff; }
 
 .header { max-width: 1180px; margin: auto; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; position: relative; z-index: 2; }
-.brand { font: 26px 'Archivo Black', sans-serif; text-transform: uppercase; text-decoration: none; letter-spacing: .5px; }
+.brand { font: 26px var(--font-titulos), Impact, sans-serif; text-transform: uppercase; text-decoration: none; letter-spacing: .5px; }
 .brand img { display: block; height: 56px; width: auto; transition: filter .3s; }
 .brand:hover img { filter: drop-shadow(0 0 14px rgba(240, 97, 79, .6)); }
 .header nav { display: flex; align-items: center; gap: 22px; }
@@ -72,7 +70,7 @@ button { font: inherit; cursor: pointer; }
 /* Franja diagonal en movimiento. */
 .franja { position: relative; z-index: 1; margin: -50px -2% 0; transform: rotate(-2.5deg); background: var(--fuego); padding: 14px 0; overflow: hidden; box-shadow: 0 20px 50px -20px rgba(179, 20, 31, .6); }
 .franja > div { display: flex; width: max-content; animation: correr 28s linear infinite; }
-.franja span { font: 22px 'Archivo Black', sans-serif; text-transform: uppercase; color: #1a0d0b; white-space: nowrap; padding-right: 28px; }
+.franja span { font: 22px var(--font-titulos), Impact, sans-serif; text-transform: uppercase; color: #1a0d0b; white-space: nowrap; padding-right: 28px; }
 .franja b { padding-left: 28px; font-weight: 400; color: #fff3e6; }
 @keyframes correr { to { transform: translateX(-50%); } }
 
@@ -89,11 +87,11 @@ button { font: inherit; cursor: pointer; }
 .destacado::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--fuego); transform: scaleX(.15); transform-origin: left; transition: transform .45s; }
 .destacado:hover { transform: translateY(-8px) rotate(-1deg); border-color: rgba(240, 97, 79, .5); box-shadow: 0 24px 50px -24px rgba(240, 97, 79, .55); }
 .destacado:hover::after { transform: scaleX(1); }
-.destacado-num { position: absolute; top: -14px; right: 10px; font: 96px/1 'Archivo Black', sans-serif; color: transparent; -webkit-text-stroke: 1px rgba(240, 97, 79, .35); pointer-events: none; }
+.destacado-num { position: absolute; top: -14px; right: 10px; font: 96px/1 var(--font-titulos), Impact, sans-serif; color: transparent; -webkit-text-stroke: 1px rgba(240, 97, 79, .35); pointer-events: none; }
 .destacado img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; margin-bottom: 16px; }
 .destacado h3 { position: relative; font-size: 22px; text-transform: uppercase; max-width: 80%; }
 .destacado p { color: var(--muted); margin: 0 0 18px; }
-.destacado strong { font: 24px 'Archivo Black', sans-serif; background: var(--fuego); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.destacado strong { font: 24px var(--font-titulos), Impact, sans-serif; background: var(--fuego); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* Visítanos: tarjetas sueltas, ligeramente giradas. */
 .visitanos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; padding-top: 70px; }
@@ -105,12 +103,14 @@ button { font: inherit; cursor: pointer; }
 .tarjeta-fuego .eyebrow { color: #1a0d0b; }
 .tarjeta-fuego span { font-weight: 700; }
 .tarjeta-fuego:hover { box-shadow: 0 24px 50px -18px rgba(240, 97, 79, .8); }
-/* Mapa en tonos oscuros; el iframe no recibe clics para que todo el recuadro abra Google Maps. */
-.mapa { position: relative; display: block; height: 340px; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); }
-.mapa iframe { width: 100%; height: 100%; border: 0; pointer-events: none; filter: invert(.92) hue-rotate(180deg) saturate(.6) brightness(.9); }
-.mapa::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(22, 18, 17, .65)); }
-.mapa-pin { position: absolute; z-index: 1; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--fuego); box-shadow: 0 0 0 6px rgba(240, 97, 79, .25), 0 0 30px 8px rgba(255, 154, 60, .5); animation: respirar 1.6s ease-in-out infinite alternate; }
-.mapa:hover { border-color: rgba(240, 97, 79, .5); }
+/* Mapa: primero un recuadro liviano; el iframe de Google solo se carga al tocar "Ver mapa aquí". */
+.mapa { position: relative; height: 340px; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); }
+.mapa iframe { width: 100%; height: 100%; border: 0; filter: invert(.92) hue-rotate(180deg) saturate(.6) brightness(.9); }
+.mapa-off { display: grid; place-content: center; justify-items: center; gap: 6px; padding: 24px; text-align: center; background: radial-gradient(circle at 50% 40%, rgba(240, 97, 79, .16), transparent 60%), repeating-linear-gradient(0deg, transparent 0 39px, var(--line) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, var(--line) 39px 40px), var(--surface); }
+.mapa-off p { font: 20px var(--font-titulos), Impact, sans-serif; text-transform: uppercase; margin: 14px 0 0; }
+.mapa-off .actions { justify-content: center; margin-top: 10px; }
+.mapa-off small { color: var(--muted); margin-top: 6px; }
+.mapa-pin { width: 22px; height: 22px; border-radius: 50%; background: var(--fuego); box-shadow: 0 0 0 6px rgba(240, 97, 79, .25), 0 0 30px 8px rgba(255, 154, 60, .5); animation: respirar 1.6s ease-in-out infinite alternate; }
 
 /* ---------- Menú ---------- */
 .chips { position: sticky; top: 0; z-index: 3; display: flex; gap: 10px; flex-wrap: wrap; margin: 10px -5% 30px; padding: 12px 5%; background: rgba(22, 18, 17, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
