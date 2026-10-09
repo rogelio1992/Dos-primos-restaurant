@@ -2,33 +2,14 @@
 import {FormEvent, useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {getSupabaseClient} from "../../lib/supabase";
+import {comprimir, extension, rutaEnBucket} from "../../lib/imagenes";
+import GaleriaEditor from "./galeria";
 import {Categoria, ESTADOS, Platillo, RESTAURANTE, Reservacion, dinero, hoy} from "../../lib/restaurante";
 
-type Vista = "reservaciones" | "menu";
+type Vista = "reservaciones" | "menu" | "galeria";
+const VISTAS: Record<Vista, string> = {reservaciones: "Reservaciones", menu: "Menú", galeria: "Galería"};
 const vacio = {id: 0, categoria_id: 0, nombre: "", descripcion: "", precio: 0, foto_url: "", disponible: true, destacado: false, orden: 0};
 const BUCKET = "platillos";
-
-// Reduce la foto en el navegador antes de subirla (máx. 800 px, WebP o JPEG): una foto de celular de 4 MB queda en ~60-120 KB,
-// que es lo que luego descarga cada cliente al abrir el menú.
-async function comprimir(archivo: File): Promise<Blob> {
-    const imagen = await createImageBitmap(archivo);
-    const escala = Math.min(1, 800 / Math.max(imagen.width, imagen.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(imagen.width * escala); canvas.height = Math.round(imagen.height * escala);
-    canvas.getContext("2d")!.drawImage(imagen, 0, 0, canvas.width, canvas.height);
-    const exportar = (tipo: string) => new Promise<Blob | null>(listo => canvas.toBlob(listo, tipo, 0.78));
-    // Safari viejo no sabe generar WebP y devuelve PNG: en ese caso usar JPEG.
-    const webp = await exportar("image/webp");
-    const blob = webp?.type === "image/webp" ? webp : await exportar("image/jpeg");
-    if (!blob) throw new Error("No se pudo procesar la imagen");
-    return blob;
-}
-
-// Ruta dentro del bucket si la foto es nuestra; null si es un enlace externo.
-function rutaFoto(url: string | null) {
-    const marca = `/storage/v1/object/public/${BUCKET}/`;
-    return url?.includes(marca) ? url.split(marca)[1] : null;
-}
 
 export default function Admin() {
     const router = useRouter();
@@ -55,9 +36,11 @@ export default function Admin() {
     if (estado === "sin-permiso") return <main className="section narrow"><h1>Sin acceso</h1><p className="intro">Esta cuenta no es administradora. Agrégala a la tabla <code>profiles</code> en Supabase.</p><button className="button" onClick={salir}>Cerrar sesión</button></main>;
     return <main className="section">
         <div className="admin-head"><h1>Administración</h1><button className="text-link" onClick={salir}>Cerrar sesión</button></div>
-        <nav className="tabs">{(["reservaciones", "menu"] as Vista[]).map(v => <button key={v} className={v === vista ? "active" : ""} onClick={() => { setVista(v); setAviso(""); }}>{v === "menu" ? "Menú" : "Reservaciones"}</button>)}</nav>
+        <nav className="tabs">{(Object.keys(VISTAS) as Vista[]).map(v => <button key={v} className={v === vista ? "active" : ""} onClick={() => { setVista(v); setAviso(""); }}>{VISTAS[v]}</button>)}</nav>
         {aviso && <p className="notice" role="status">{aviso}</p>}
-        {vista === "reservaciones" ? <Reservaciones avisar={setAviso}/> : <MenuEditor avisar={setAviso}/>}
+        {vista === "reservaciones" && <Reservaciones avisar={setAviso}/>}
+        {vista === "menu" && <MenuEditor avisar={setAviso}/>}
+        {vista === "galeria" && <GaleriaEditor avisar={setAviso}/>}
     </main>;
 }
 
@@ -159,8 +142,8 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
             const anterior = platillos.find(p => p.id === editando.id)?.foto_url ?? null;
             let foto_url: string | null = editando.foto_url.trim() || null;
             if (archivo) {
-                const blob = await comprimir(archivo);
-                const ruta = `${crypto.randomUUID()}.${blob.type === "image/webp" ? "webp" : "jpg"}`;
+                const blob = await comprimir(archivo, 800);
+                const ruta = `${crypto.randomUUID()}.${extension(blob)}`;
                 const subida = await db.storage.from(BUCKET).upload(ruta, blob, {contentType: blob.type, cacheControl: "31536000"});
                 if (subida.error) return avisar("No se pudo subir la foto. Revisa que el SQL de fotos esté ejecutado en Supabase.");
                 foto_url = db.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;
@@ -169,7 +152,7 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
             const {error} = id ? await db.from("platillos").update(datos).eq("id", id) : await db.from("platillos").insert(datos);
             if (error) return avisar(error.message.includes("destacados") ? `Ya hay ${RESTAURANTE.maxDestacados} platillos destacados. Desmarca uno antes de destacar este.` : "No se pudo guardar el platillo.");
             // La foto vieja ya no la usa nadie: borrarla para no ocupar espacio. Si falla no pasa nada.
-            const vieja = anterior !== foto_url ? rutaFoto(anterior) : null;
+            const vieja = anterior !== foto_url ? rutaEnBucket(anterior, BUCKET) : null;
             if (vieja) await db.storage.from(BUCKET).remove([vieja]);
             setEditando(null); setArchivo(null); avisar("Platillo guardado."); cargar();
         } catch {
@@ -183,7 +166,7 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
         if (!confirm(`¿Borrar ${p.nombre}? Si solo se acabó, mejor márcalo como no disponible.`)) return;
         const {error} = await db.from("platillos").delete().eq("id", p.id);
         if (error) return avisar("No se pudo borrar el platillo.");
-        const ruta = rutaFoto(p.foto_url);
+        const ruta = rutaEnBucket(p.foto_url, BUCKET);
         if (ruta) await db.storage.from(BUCKET).remove([ruta]);
         cargar();
     }

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import {getSupabasePublic} from "../lib/supabase-public";
-import {Platillo, RESTAURANTE, dinero, whatsappLink} from "../lib/restaurante";
+import {FotoGaleria, Platillo, RESTAURANTE, dinero, whatsappLink} from "../lib/restaurante";
 import Brasas from "./brasas";
 import Mapa from "./mapa";
+import Galeria from "./galeria";
 import {getAjustes} from "../lib/ajustes";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +13,13 @@ const FRASES = ["A la parrilla", "Hecho al momento", "Para compartir", "Sabor de
 export default async function Inicio() {
     const whatsapp = whatsappLink(RESTAURANTE.whatsapp);
     const {reservaciones_activas} = await getAjustes();
-    let destacados: Platillo[] = [];
+    let destacados: Platillo[] = [], fotos: FotoGaleria[] = [];
     const db = getSupabasePublic();
     if (db) {
         const {data, error} = await db.from("platillos").select("id,categoria_id,nombre,descripcion,precio,foto_url,disponible,destacado,orden").eq("disponible", true).eq("destacado", true).order("orden").order("nombre").limit(RESTAURANTE.maxDestacados);
         if (!error && data) destacados = data;
+        const galeria = await db.from("galeria").select("id,foto_url,miniatura_url,descripcion,orden").order("orden").order("id").limit(RESTAURANTE.maxGaleria);
+        if (!galeria.error && galeria.data) fotos = galeria.data;
     }
     const franja = [...FRASES, ...FRASES];
     return <main>
@@ -44,6 +47,11 @@ export default async function Inicio() {
                 {p.descripcion && <p>{p.descripcion}</p>}
                 <strong>{dinero(p.precio)}</strong>
             </article>)}</div>
+        </section>}
+
+        {fotos.length > 0 && <section className="section seccion-galeria" id="el-lugar">
+            <div className="destacados-head"><p className="eyebrow">EL LUGAR</p><h2>Ven a conocernos</h2></div>
+            <Galeria fotos={fotos}/>
         </section>}
 
         <section className="section visitanos" id="visitanos">
