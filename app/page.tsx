@@ -13,7 +13,7 @@ export default async function Inicio() {
     let destacados: Platillo[] = [];
     const db = getSupabasePublic();
     if (db) {
-        const {data, error} = await db.from("platillos").select("id,categoria_id,nombre,descripcion,precio,foto_url,disponible,orden").eq("disponible", true).order("orden").order("nombre").limit(3);
+        const {data, error} = await db.from("platillos").select("id,categoria_id,nombre,descripcion,precio,foto_url,disponible,destacado,orden").eq("disponible", true).eq("destacado", true).order("orden").order("nombre").limit(RESTAURANTE.maxDestacados);
         if (!error && data) destacados = data;
     }
     const franja = [...FRASES, ...FRASES];

@@ -22,6 +22,7 @@ create table public.platillos (
   precio integer not null check (precio >= 0),
   foto_url text,
   disponible boolean not null default true,
+  destacado boolean not null default false,
   orden integer not null default 0
 );
 create index platillos_categoria_idx on public.platillos (categoria_id, orden);
@@ -65,6 +66,26 @@ grant select on public.profiles to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 grant select, insert on public.reservaciones to service_role;
 grant usage, select on sequence public.reservaciones_id_seq to service_role;
+
+-- Destacados de la portada: máximo 3 (igual a RESTAURANTE.maxDestacados).
+create function public.limite_destacados() returns trigger language plpgsql as $$
+begin
+  if new.destacado and (select count(*) from public.platillos where destacado and id <> new.id) >= 3 then
+    raise exception 'Ya hay 3 platillos destacados' using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+
+create trigger platillos_limite_destacados before insert or update of destacado on public.platillos
+for each row execute function public.limite_destacados();
+
+-- Fotos de platillos: carpeta pública (cualquiera las ve en el menú); solo administración sube, cambia o borra. Máximo 2 MB por foto.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('platillos', 'platillos', true, 2097152, array['image/webp', 'image/jpeg', 'image/png']);
+
+create policy "admin sube fotos" on storage.objects for insert to authenticated with check (bucket_id = 'platillos' and public.is_admin());
+create policy "admin cambia fotos" on storage.objects for update to authenticated using (bucket_id = 'platillos' and public.is_admin());
+create policy "admin borra fotos" on storage.objects for delete to authenticated using (bucket_id = 'platillos' and public.is_admin());
 
 -- Menú de ejemplo para ver el sitio funcionando; editarlo desde /admin.
 with c as (

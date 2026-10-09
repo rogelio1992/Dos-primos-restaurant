@@ -1,11 +1,34 @@
 "use client";
-import {FormEvent, useCallback, useEffect, useState} from "react";
+import {FormEvent, useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {getSupabaseClient} from "../../lib/supabase";
-import {Categoria, ESTADOS, Platillo, Reservacion, dinero, hoy} from "../../lib/restaurante";
+import {Categoria, ESTADOS, Platillo, RESTAURANTE, Reservacion, dinero, hoy} from "../../lib/restaurante";
 
 type Vista = "reservaciones" | "menu";
-const vacio = {id: 0, categoria_id: 0, nombre: "", descripcion: "", precio: 0, foto_url: "", disponible: true, orden: 0};
+const vacio = {id: 0, categoria_id: 0, nombre: "", descripcion: "", precio: 0, foto_url: "", disponible: true, destacado: false, orden: 0};
+const BUCKET = "platillos";
+
+// Reduce la foto en el navegador antes de subirla (máx. 800 px, WebP o JPEG): una foto de celular de 4 MB queda en ~60-120 KB,
+// que es lo que luego descarga cada cliente al abrir el menú.
+async function comprimir(archivo: File): Promise<Blob> {
+    const imagen = await createImageBitmap(archivo);
+    const escala = Math.min(1, 800 / Math.max(imagen.width, imagen.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(imagen.width * escala); canvas.height = Math.round(imagen.height * escala);
+    canvas.getContext("2d")!.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+    const exportar = (tipo: string) => new Promise<Blob | null>(listo => canvas.toBlob(listo, tipo, 0.78));
+    // Safari viejo no sabe generar WebP y devuelve PNG: en ese caso usar JPEG.
+    const webp = await exportar("image/webp");
+    const blob = webp?.type === "image/webp" ? webp : await exportar("image/jpeg");
+    if (!blob) throw new Error("No se pudo procesar la imagen");
+    return blob;
+}
+
+// Ruta dentro del bucket si la foto es nuestra; null si es un enlace externo.
+function rutaFoto(url: string | null) {
+    const marca = `/storage/v1/object/public/${BUCKET}/`;
+    return url?.includes(marca) ? url.split(marca)[1] : null;
+}
 
 export default function Admin() {
     const router = useRouter();
@@ -68,6 +91,12 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
     const db = getSupabaseClient()!;
     const [categorias, setCategorias] = useState<Categoria[]>([]), [platillos, setPlatillos] = useState<Platillo[]>([]);
     const [editando, setEditando] = useState<typeof vacio | null>(null);
+    const [archivo, setArchivo] = useState<File | null>(null), [guardando, setGuardando] = useState(false);
+    const vistaPrevia = useMemo(() => archivo ? URL.createObjectURL(archivo) : null, [archivo]);
+    useEffect(() => () => { if (vistaPrevia) URL.revokeObjectURL(vistaPrevia); }, [vistaPrevia]);
+    // Destacados sin contar el que se está editando: así se puede desmarcar o volver a guardar uno que ya lo era.
+    const otrosDestacados = platillos.filter(p => p.destacado && p.id !== editando?.id).length;
+    const limiteLleno = otrosDestacados >= RESTAURANTE.maxDestacados;
     const cargar = useCallback(async () => {
         const [c, p] = await Promise.all([db.from("categorias").select("*").order("orden").order("nombre"), db.from("platillos").select("*").order("orden").order("nombre")]);
         if (c.error || p.error) return avisar("No se pudo cargar el menú.");
@@ -90,29 +119,64 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
         if (error) avisar("No se pudo borrar la categoría."); else cargar();
     }
 
+    function abrir(datos: typeof vacio) { setArchivo(null); setEditando(datos); }
+
+    function elegirFoto(lista: FileList | null) {
+        const elegido = lista?.[0];
+        if (!elegido) return;
+        if (!elegido.type.startsWith("image/")) return avisar("Ese archivo no es una imagen.");
+        setArchivo(elegido);
+    }
+
     async function guardar(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!editando) return;
-        const {id, ...datos} = {...editando, nombre: editando.nombre.trim(), foto_url: editando.foto_url?.trim() || null};
-        const {error} = id ? await db.from("platillos").update(datos).eq("id", id) : await db.from("platillos").insert(datos);
-        if (error) return avisar("No se pudo guardar el platillo.");
-        setEditando(null); avisar("Platillo guardado."); cargar();
+        if (!editando || guardando) return;
+        if (editando.destacado && limiteLleno) return avisar(`Ya hay ${RESTAURANTE.maxDestacados} platillos destacados. Desmarca uno antes de destacar este.`);
+        setGuardando(true);
+        try {
+            const anterior = platillos.find(p => p.id === editando.id)?.foto_url ?? null;
+            let foto_url: string | null = editando.foto_url.trim() || null;
+            if (archivo) {
+                const blob = await comprimir(archivo);
+                const ruta = `${crypto.randomUUID()}.${blob.type === "image/webp" ? "webp" : "jpg"}`;
+                const subida = await db.storage.from(BUCKET).upload(ruta, blob, {contentType: blob.type, cacheControl: "31536000"});
+                if (subida.error) return avisar("No se pudo subir la foto. Revisa que el SQL de fotos esté ejecutado en Supabase.");
+                foto_url = db.storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;
+            }
+            const {id, ...datos} = {...editando, nombre: editando.nombre.trim(), foto_url};
+            const {error} = id ? await db.from("platillos").update(datos).eq("id", id) : await db.from("platillos").insert(datos);
+            if (error) return avisar(error.message.includes("destacados") ? `Ya hay ${RESTAURANTE.maxDestacados} platillos destacados. Desmarca uno antes de destacar este.` : "No se pudo guardar el platillo.");
+            // La foto vieja ya no la usa nadie: borrarla para no ocupar espacio. Si falla no pasa nada.
+            const vieja = anterior !== foto_url ? rutaFoto(anterior) : null;
+            if (vieja) await db.storage.from(BUCKET).remove([vieja]);
+            setEditando(null); setArchivo(null); avisar("Platillo guardado."); cargar();
+        } catch {
+            avisar("No se pudo procesar la foto. Prueba con otra imagen.");
+        } finally {
+            setGuardando(false);
+        }
     }
 
     async function borrarPlatillo(p: Platillo) {
         if (!confirm(`¿Borrar ${p.nombre}? Si solo se acabó, mejor márcalo como no disponible.`)) return;
         const {error} = await db.from("platillos").delete().eq("id", p.id);
-        if (error) avisar("No se pudo borrar el platillo."); else cargar();
+        if (error) return avisar("No se pudo borrar el platillo.");
+        const ruta = rutaFoto(p.foto_url);
+        if (ruta) await db.storage.from(BUCKET).remove([ruta]);
+        cargar();
     }
 
+    const totalDestacados = platillos.filter(p => p.destacado).length;
+    const foto = vistaPrevia ?? editando?.foto_url;
     return <section>
+        <p className="contador-destacados">★ Destacados en la portada: <b>{totalDestacados} de {RESTAURANTE.maxDestacados}</b></p>
         <form className="toolbar" onSubmit={nuevaCategoria}><label>Nueva categoría<input name="nombre" placeholder="Ej. Tacos"/></label><button className="button">Agregar</button></form>
         {categorias.map(c => <div key={c.id} className="category">
-            <div className="admin-head"><h2>{c.nombre}</h2><div><button className="text-link" onClick={() => setEditando({...vacio, categoria_id: c.id})}>+ Platillo</button> <button className="text-link danger" onClick={() => borrarCategoria(c)}>Borrar</button></div></div>
+            <div className="admin-head"><h2>{c.nombre}</h2><div><button className="text-link" onClick={() => abrir({...vacio, categoria_id: c.id})}>+ Platillo</button> <button className="text-link danger" onClick={() => borrarCategoria(c)}>Borrar</button></div></div>
             {platillos.filter(p => p.categoria_id === c.id).map(p => <article key={p.id} className={p.disponible ? "res" : "res cancelada"}>
                 <strong>{dinero(p.precio)}</strong>
-                <div><b>{p.nombre}</b>{!p.disponible && " · No disponible"}{p.descripcion && <p>{p.descripcion}</p>}</div>
-                <div><button className="text-link" onClick={() => setEditando({...p, foto_url: p.foto_url ?? ""})}>Editar</button> <button className="text-link danger" onClick={() => borrarPlatillo(p)}>Borrar</button></div>
+                <div className="platillo-admin">{p.foto_url && <img src={p.foto_url} alt="" loading="lazy"/>}<div><b>{p.nombre}</b>{p.destacado && <span className="insignia">★ Destacado</span>}{!p.disponible && " · No disponible"}{p.descripcion && <p>{p.descripcion}</p>}</div></div>
+                <div><button className="text-link" onClick={() => abrir({...p, foto_url: p.foto_url ?? ""})}>Editar</button> <button className="text-link danger" onClick={() => borrarPlatillo(p)}>Borrar</button></div>
             </article>)}
         </div>)}
         {editando && <div className="modal" role="dialog" aria-modal="true"><form className="card form" onSubmit={guardar}>
@@ -124,9 +188,20 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
                 <label>Categoría<select value={editando.categoria_id} onChange={e => setEditando({...editando, categoria_id: Number(e.target.value)})}>{categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></label>
                 <label>Orden<input type="number" value={editando.orden} onChange={e => setEditando({...editando, orden: Number(e.target.value)})}/></label>
             </div>
-            <label>URL de la foto (opcional)<input type="url" value={editando.foto_url ?? ""} onChange={e => setEditando({...editando, foto_url: e.target.value})}/></label>
+            <div className="foto-campo">
+                <span>Foto (opcional)</span>
+                {foto ? <img src={foto} alt="Vista previa"/> : <div className="foto-vacia">Sin foto</div>}
+                <div className="actions">
+                    <label className="button boton-archivo">{foto ? "Cambiar foto" : "Elegir foto"}<input type="file" accept="image/*" onChange={e => { elegirFoto(e.target.files); e.target.value = ""; }}/></label>
+                    {foto && <button type="button" className="text-link danger" onClick={() => { setArchivo(null); setEditando({...editando, foto_url: ""}); }}>Quitar foto</button>}
+                </div>
+                {archivo && <small>Se reducirá antes de subirla para que el menú cargue rápido.</small>}
+            </div>
             <label className="check"><input type="checkbox" checked={editando.disponible} onChange={e => setEditando({...editando, disponible: e.target.checked})}/> Disponible en el menú</label>
-            <div className="actions"><button className="button">Guardar</button><button type="button" className="text-link" onClick={() => setEditando(null)}>Cancelar</button></div>
+            <label className="check"><input type="checkbox" checked={editando.destacado} disabled={!editando.destacado && limiteLleno} onChange={e => setEditando({...editando, destacado: e.target.checked})}/> ★ Destacar en la portada ({otrosDestacados + (editando.destacado ? 1 : 0)} de {RESTAURANTE.maxDestacados})</label>
+            {!editando.destacado && limiteLleno && <p className="notice">Ya hay {RESTAURANTE.maxDestacados} platillos destacados, que es el límite de tarjetas de la portada. Desmarca uno para poder destacar este.</p>}
+            {editando.destacado && !editando.disponible && <p className="notice">Un platillo no disponible no se muestra en la portada aunque esté destacado.</p>}
+            <div className="actions"><button className="button" disabled={guardando}>{guardando ? "Guardando…" : "Guardar"}</button><button type="button" className="text-link" onClick={() => setEditando(null)}>Cancelar</button></div>
         </form></div>}
     </section>;
 }

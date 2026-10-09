@@ -12,11 +12,13 @@ export const RESTAURANTE = {
     moneda: "CUP",
     // Horas que se ofrecen en el formulario de reservación.
     horasReserva: ["13:00", "13:30", "14:00", "14:30", "15:00", "19:00", "19:30", "20:00", "20:30", "21:00"],
-    maxPersonas: 20
+    maxPersonas: 20,
+    // Tarjetas de "Los favoritos de la casa" en la portada. El mismo límite está en supabase/schema.sql (limite_destacados).
+    maxDestacados: 3
 };
 
 export type Categoria = {id: number; nombre: string; orden: number};
-export type Platillo = {id: number; categoria_id: number; nombre: string; descripcion: string; precio: number; foto_url: string | null; disponible: boolean; orden: number};
+export type Platillo = {id: number; categoria_id: number; nombre: string; descripcion: string; precio: number; foto_url: string | null; disponible: boolean; destacado: boolean; orden: number};
 export type Reservacion = {id: number; nombre: string; telefono: string; fecha: string; hora: string; personas: number; estado: string; notas: string; created_at: string};
 
 export const ESTADOS: Record<string, string> = {pendiente: "Pendiente", confirmada: "Confirmada", cancelada: "Cancelada", completada: "Completada", no_asistio: "No asistió"};

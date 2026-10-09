@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {title: "Menú | Dos Primos"};
 
 export default async function Menu() {
-    let categorias: Categoria[] = [], platillos: Platillo[] = [];
+    let categorias: Categoria[] = [], platillos: Omit<Platillo, "destacado">[] = [];
     const db = getSupabasePublic();
     if (db) {
         const [c, p] = await Promise.all([

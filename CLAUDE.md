@@ -25,7 +25,9 @@ There is no test suite.
 
 **`lib/restaurante.ts` is the single source of restaurant config and shared types**: name, hours, timezone (`America/Havana`), currency (CUP, shown as `$8,900 CUP`), allowed reservation times, max party size, the `Categoria`/`Platillo`/`Reservacion` types, the `ESTADOS` map, and helpers `dinero()` (currency format) and `hoy()` (today as `YYYY-MM-DD` in the restaurant's timezone). Always use `hoy()` rather than `new Date()` for date comparisons.
 
-**Schema changes are manual.** `supabase/schema.sql` is a one-shot setup script run in the Supabase SQL Editor (no migrations tooling). When changing the schema, update this file and tell the user what SQL to run on the existing project. Keep DB constraints in sync with app-side values — e.g. `reservaciones.estado` check ↔ `ESTADOS`, and `personas` check (1–30) ↔ `RESTAURANTE.maxPersonas`.
+**Schema changes are manual.** `supabase/schema.sql` is a one-shot setup script run in the Supabase SQL Editor (no migrations tooling). When changing the schema, update `schema.sql` (for fresh setups) and also add a dated one-shot script like `supabase/2026-10-09-destacados-y-fotos.sql` for the user to run on the live project; the app code must not assume it has been run until the user confirms. Keep DB constraints in sync with app-side values — e.g. `reservaciones.estado` check ↔ `ESTADOS`, `personas` check (1–30) ↔ `RESTAURANTE.maxPersonas`, and the `limite_destacados()` trigger (3) ↔ `RESTAURANTE.maxDestacados`.
+
+**Dish photos** live in the public Storage bucket `platillos` (admin-only writes via RLS on `storage.objects`). `/admin` compresses images in the browser to ≤800 px WebP/JPEG before upload and deletes the old object when a photo is replaced or the dish is deleted — keep that, since many visitors are on expensive mobile data.
 
 ## Environment
 
