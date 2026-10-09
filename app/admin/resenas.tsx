@@ -27,9 +27,13 @@ export default function ResenasEditor({avisar}: {avisar: (texto: string) => void
     useEffect(() => { cargar(); }, [cargar]);
 
     async function cambiarEstado(r: Resena, estado: Filtro) {
-        const {error} = await db.from("resenas").update({estado}).eq("id", r.id);
+        // Una respuesta escrita sin guardar se guarda junto con el cambio; si no, se perdería al recargar la lista.
+        const respuesta = (respuestas[r.id] ?? "").trim().slice(0, 600);
+        const cambioRespuesta = respuesta !== r.respuesta ? {respuesta, respondida_at: respuesta ? new Date().toISOString() : null} : {};
+        const {error} = await db.from("resenas").update({estado, ...cambioRespuesta}).eq("id", r.id);
         if (error) return avisar("No se pudo cambiar la reseña.");
-        avisar(estado === "publicada" ? "Reseña publicada: ya se ve en el sitio." : estado === "oculta" ? "Reseña oculta: ya no se ve en el sitio." : "Reseña devuelta a pendientes.");
+        const conRespuesta = respuesta && respuesta !== r.respuesta ? " con tu respuesta" : "";
+        avisar(estado === "publicada" ? `Reseña publicada${conRespuesta}: ya se ve en el sitio.` : estado === "oculta" ? "Reseña oculta: ya no se ve en el sitio." : "Reseña devuelta a pendientes.");
         cargar();
     }
 
