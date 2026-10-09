@@ -22,7 +22,8 @@ export default async function RootLayout({children}: Readonly<{children: React.R
             <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link><Link href="/resenas">Reseñas</Link>{reservaciones_activas && <Link className="button" href="/reservar">Reservar mesa</Link>}</nav>
         </header>
         {children}
-        <footer className="footer"><span>{RESTAURANTE.nombre} · {RESTAURANTE.lema}</span><Link href="/admin/login">Acceso administración</Link></footer>
+        {/* Sin enlace al panel: el personal entra escribiendo /admin. */}
+        <footer className="footer"><span>{RESTAURANTE.nombre} · {RESTAURANTE.lema}</span></footer>
         <Analitica/>
     </body></html>;
 }
