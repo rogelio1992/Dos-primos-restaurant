@@ -22,7 +22,9 @@ create policy "resenas publicadas" on public.resenas for select to anon, authent
 create policy "admin resenas" on public.resenas for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- El público solo puede leer estas columnas (no ip_hash). Las reseñas nuevas entran por /api/resenas con la clave de servicio.
-grant select (id, platillo_id, nombre, estrellas, comentario, estado, respuesta, respondida_at, created_at) on public.resenas to anon;
-grant select, update, delete on public.resenas to authenticated;
+-- Supabase da por defecto lectura de todas las columnas en tablas nuevas: quitarla y dar solo las públicas.
+revoke select on public.resenas from anon, authenticated;
+grant select (id, platillo_id, nombre, estrellas, comentario, estado, respuesta, respondida_at, created_at) on public.resenas to anon, authenticated;
+grant update, delete on public.resenas to authenticated;
 grant select, insert on public.resenas to service_role;
 grant usage, select on sequence public.resenas_id_seq to service_role;

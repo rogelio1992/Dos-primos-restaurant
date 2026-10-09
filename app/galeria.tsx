@@ -23,7 +23,8 @@ export default function Galeria({fotos}: {fotos: FotoGaleria[]}) {
 
     const foto = abierta === null ? null : fotos[abierta];
     return <>
-        <div className="galeria">{fotos.map((f, i) => <button key={f.id} type="button" className="galeria-item" onClick={() => setAbierta(i)} aria-label={`Ver foto ${i + 1}${f.descripcion ? `: ${f.descripcion}` : ""}`}>
+        {/* data-n: con menos de 6 fotos el mosaico usa una composición propia para no dejar huecos. */}
+        <div className="galeria" data-n={Math.min(fotos.length, 6)}>{fotos.map((f, i) => <button key={f.id} type="button" className="galeria-item" onClick={() => setAbierta(i)} aria-label={`Ver foto ${i + 1}${f.descripcion ? `: ${f.descripcion}` : ""}`}>
             <img src={f.miniatura_url} alt={f.descripcion} loading="lazy" decoding="async"/>
             {f.descripcion && <span>{f.descripcion}</span>}
         </button>)}</div>
