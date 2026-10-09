@@ -1,6 +1,7 @@
 import type {Metadata} from "next";
 import Link from "next/link";
 import {RESTAURANTE} from "../lib/restaurante";
+import {getAjustes} from "../lib/ajustes";
 import {Archivo_Black} from "next/font/google";
 import "./globals.css";
 
@@ -9,14 +10,15 @@ const titulos = Archivo_Black({weight: "400", subsets: ["latin"], display: "swap
 
 export const metadata: Metadata = {
     title: `${RESTAURANTE.nombre} | Restaurante`,
-    description: `${RESTAURANTE.lema}. Conoce nuestro menú y reserva tu mesa.`
+    description: `${RESTAURANTE.lema}. Conoce nuestro menú y visítanos.`
 };
 
-export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
+export default async function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
+    const {reservaciones_activas} = await getAjustes();
     return <html lang="es" className={titulos.variable}><body>
         <header className="header">
             <Link href="/" className="brand"><img src="/logo.webp" alt={RESTAURANTE.nombre} width={344} height={193}/></Link>
-            <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link><Link className="button" href="/reservar">Reservar mesa</Link></nav>
+            <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link>{reservaciones_activas && <Link className="button" href="/reservar">Reservar mesa</Link>}</nav>
         </header>
         {children}
         <footer className="footer"><span>{RESTAURANTE.nombre} · {RESTAURANTE.lema}</span><Link href="/admin/login">Acceso administración</Link></footer>

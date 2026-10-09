@@ -70,6 +70,24 @@ function Reservaciones({avisar}: {avisar: (texto: string) => void}) {
     }, [db, fecha, avisar]);
     useEffect(() => { cargar(); }, [cargar]);
 
+    // null mientras carga o si falta la tabla "ajustes" en Supabase.
+    const [activas, setActivas] = useState<boolean | null>(null), [cambiando, setCambiando] = useState(false);
+    useEffect(() => {
+        db.from("ajustes").select("reservaciones_activas").maybeSingle().then(({data, error}) => {
+            if (error || !data) avisar("No se pudo leer si las reservaciones están activas. Revisa que el SQL de ajustes esté ejecutado en Supabase.");
+            else setActivas(data.reservaciones_activas);
+        });
+    }, [db, avisar]);
+
+    async function alternar(valor: boolean) {
+        setCambiando(true);
+        const {error} = await db.from("ajustes").update({reservaciones_activas: valor}).eq("id", true);
+        setCambiando(false);
+        if (error) return avisar("No se pudo cambiar el ajuste de reservaciones.");
+        setActivas(valor);
+        avisar(valor ? "Reservaciones activadas: el sitio vuelve a mostrar el botón y el formulario." : "Reservaciones desactivadas: el sitio ya no muestra nada de reservas.");
+    }
+
     async function cambiar(id: number, estado: string) {
         const {error} = await db.from("reservaciones").update({estado}).eq("id", id);
         if (error) avisar("No se pudo actualizar la reservación."); else cargar();
@@ -77,6 +95,10 @@ function Reservaciones({avisar}: {avisar: (texto: string) => void}) {
 
     const personas = lista.filter(r => r.estado !== "cancelada").reduce((total, r) => total + r.personas, 0);
     return <section>
+        <div className={`ajuste ${activas ? "on" : ""}`}>
+            <label className="check"><input type="checkbox" checked={!!activas} disabled={activas === null || cambiando} onChange={e => alternar(e.target.checked)}/> Admitir reservaciones en línea</label>
+            <p>{activas === null ? "Cargando…" : activas ? "El sitio muestra el botón “Reservar mesa” y el formulario." : "El sitio no muestra nada de reservas y no acepta solicitudes nuevas."}</p>
+        </div>
         <div className="toolbar"><label>Fecha<input type="date" value={fecha} onChange={e => setFecha(e.target.value)}/></label><p>{lista.length} reservaciones · {personas} personas</p></div>
         <div className="table">{lista.map(r => <article key={r.id} className={`res ${r.estado}`}>
             <strong>{r.hora.slice(0, 5)}</strong>

@@ -1,9 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
 import {getSupabaseAdmin} from "../../../lib/supabase-admin";
 import {RESTAURANTE, hoy} from "../../../lib/restaurante";
+import {getAjustes} from "../../../lib/ajustes";
 
 export async function POST(request: NextRequest) {
     try {
+        if (!(await getAjustes()).reservaciones_activas) return NextResponse.json({error: "Por ahora no estamos tomando reservaciones en línea."}, {status: 403});
         const body = await request.json();
         const nombre = String(body.nombre ?? "").trim(), telefono = String(body.telefono ?? "").trim(), notas = String(body.notas ?? "").trim().slice(0, 500);
         const fecha = String(body.fecha ?? ""), hora = String(body.hora ?? ""), personas = Number(body.personas);

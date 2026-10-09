@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {getSupabasePublic} from "../../lib/supabase-public";
 import {Categoria, Platillo, dinero} from "../../lib/restaurante";
+import {getAjustes} from "../../lib/ajustes";
 
 export const dynamic = "force-dynamic";
 export const metadata = {title: "Menú | Dos Primos"};
@@ -28,6 +29,6 @@ export default async function Menu() {
                 <div><div className="dish-title"><h3>{p.nombre}</h3><span>{dinero(p.precio)}</span></div>{p.descripcion && <p>{p.descripcion}</p>}</div>
             </article>)}</div>
         </section>)}
-        {!conPlatillos.length && <p className="empty">El menú se está preparando. Mientras tanto, <Link href="/reservar">reserva tu mesa</Link>.</p>}
+        {!conPlatillos.length && <p className="empty">El menú se está preparando.{(await getAjustes()).reservaciones_activas && <> Mientras tanto, <Link href="/reservar">reserva tu mesa</Link>.</>}</p>}
     </main>;
 }

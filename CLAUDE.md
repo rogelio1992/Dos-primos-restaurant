@@ -27,6 +27,8 @@ There is no test suite.
 
 **Schema changes are manual.** `supabase/schema.sql` is a one-shot setup script run in the Supabase SQL Editor (no migrations tooling). When changing the schema, update `schema.sql` (for fresh setups) and also add a dated one-shot script like `supabase/2026-10-09-destacados-y-fotos.sql` for the user to run on the live project; the app code must not assume it has been run until the user confirms. Keep DB constraints in sync with app-side values — e.g. `reservaciones.estado` check ↔ `ESTADOS`, `personas` check (1–30) ↔ `RESTAURANTE.maxPersonas`, and the `limite_destacados()` trigger (3) ↔ `RESTAURANTE.maxDestacados`.
 
+**Site settings** live in the single-row table `ajustes` (read with `getAjustes()` from `lib/ajustes.ts`, cached per request; defaults to reservations on if the table is missing). When `reservaciones_activas` is false, every reservation entry point must disappear — header button, home hero/CTA, empty-menu link — `/reservar` redirects home, and `/api/reservaciones` returns 403. Any new link to `/reservar` needs the same check.
+
 **Dish photos** live in the public Storage bucket `platillos` (admin-only writes via RLS on `storage.objects`). `/admin` compresses images in the browser to ≤800 px WebP/JPEG before upload and deletes the old object when a photo is replaced or the dish is deleted — keep that, since many visitors are on expensive mobile data.
 
 ## Environment

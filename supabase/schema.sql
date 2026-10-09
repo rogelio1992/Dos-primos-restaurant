@@ -87,6 +87,21 @@ create policy "admin sube fotos" on storage.objects for insert to authenticated 
 create policy "admin cambia fotos" on storage.objects for update to authenticated using (bucket_id = 'platillos' and public.is_admin());
 create policy "admin borra fotos" on storage.objects for delete to authenticated using (bucket_id = 'platillos' and public.is_admin());
 
+-- Ajustes generales que se cambian desde /admin (tabla de una sola fila).
+create table public.ajustes (
+  id boolean primary key default true check (id),
+  reservaciones_activas boolean not null default true
+);
+insert into public.ajustes default values;
+
+alter table public.ajustes enable row level security;
+-- Todos los leen (el sitio decide si muestra las reservaciones); solo administración los cambia.
+create policy "ajustes publicos" on public.ajustes for select to anon, authenticated using (true);
+create policy "admin ajustes" on public.ajustes for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+grant select on public.ajustes to anon, authenticated, service_role;
+grant update on public.ajustes to authenticated;
+
 -- Menú de ejemplo para ver el sitio funcionando; editarlo desde /admin.
 with c as (
   insert into public.categorias (nombre, orden) values ('Entradas', 1), ('Platos fuertes', 2), ('Bebidas', 3), ('Postres', 4)
