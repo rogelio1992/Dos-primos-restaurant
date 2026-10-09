@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
     return <html lang="es"><body>
         <header className="header">
-            <Link href="/" className="brand">{RESTAURANTE.nombre}</Link>
+            <Link href="/" className="brand"><img src="/logo.png" alt={RESTAURANTE.nombre} width={344} height={193}/></Link>
             <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link><Link className="button" href="/reservar">Reservar mesa</Link></nav>
         </header>
         {children}

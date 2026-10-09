@@ -2,11 +2,14 @@
 export const RESTAURANTE = {
     nombre: "Dos Primos",
     lema: "Cocina casera para compartir",
-    direccion: "",
+    direccion: "Vía Blanca, Peñas Altas, Matanzas, Cuba",
+    // Enlace para "Cómo llegar" y coordenadas para el mapa de la portada.
+    mapa: "https://maps.app.goo.gl/56y5njCMzXCNYCeH8",
+    coordenadas: "23.039539,-81.533936",
     horario: "Martes a domingo · 13:00 a 22:00",
     whatsapp: "",
-    zonaHoraria: "America/Santiago",
-    moneda: "CLP",
+    zonaHoraria: "America/Havana",
+    moneda: "CUP",
     // Horas que se ofrecen en el formulario de reservación.
     horasReserva: ["13:00", "13:30", "14:00", "14:30", "15:00", "19:00", "19:30", "20:00", "20:30", "21:00"],
     maxPersonas: 20
@@ -18,7 +21,8 @@ export type Reservacion = {id: number; nombre: string; telefono: string; fecha: 
 
 export const ESTADOS: Record<string, string> = {pendiente: "Pendiente", confirmada: "Confirmada", cancelada: "Cancelada", completada: "Completada", no_asistio: "No asistió"};
 
-export const dinero = (valor: number) => new Intl.NumberFormat("es-CL", {style: "currency", currency: RESTAURANTE.moneda, maximumFractionDigits: 0}).format(valor);
+// Formato cubano ($8,900) con el código al final, para que no se confunda con dólares.
+export const dinero = (valor: number) => `${new Intl.NumberFormat("es-CU", {style: "currency", currency: RESTAURANTE.moneda, currencyDisplay: "narrowSymbol", maximumFractionDigits: 0}).format(valor)} ${RESTAURANTE.moneda}`;
 
 export const hoy = () => new Date().toLocaleDateString("en-CA", {timeZone: RESTAURANTE.zonaHoraria});
 

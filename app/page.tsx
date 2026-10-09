@@ -1,19 +1,59 @@
 import Link from "next/link";
-import {RESTAURANTE, whatsappLink} from "../lib/restaurante";
+import {getSupabasePublic} from "../lib/supabase-public";
+import {Platillo, RESTAURANTE, dinero, whatsappLink} from "../lib/restaurante";
+import Brasas from "./brasas";
 
-export default function Inicio() {
+export const dynamic = "force-dynamic";
+
+const FRASES = ["A la parrilla", "Hecho al momento", "Para compartir", "Sabor de casa", "Fuego lento"];
+
+export default async function Inicio() {
     const whatsapp = whatsappLink(RESTAURANTE.whatsapp);
+    let destacados: Platillo[] = [];
+    const db = getSupabasePublic();
+    if (db) {
+        const {data, error} = await db.from("platillos").select("id,categoria_id,nombre,descripcion,precio,foto_url,disponible,orden").eq("disponible", true).order("orden").order("nombre").limit(3);
+        if (!error && data) destacados = data;
+    }
+    const franja = [...FRASES, ...FRASES];
     return <main>
-        <section className="hero">
-            <p className="eyebrow">BIENVENIDOS A {RESTAURANTE.nombre.toUpperCase()}</p>
-            <h1>{RESTAURANTE.lema}</h1>
-            <p className="intro">Platillos hechos al momento, en un lugar para venir con la familia y los amigos.</p>
-            <div className="actions"><Link className="button" href="/reservar">Reservar mesa</Link><Link className="text-link" href="/menu">Ver el menú →</Link></div>
+        <section className="hero-fuego">
+            <Brasas/>
+            <div className="hero-inner">
+                <div className="hero-texto">
+                    <p className="eyebrow">BIENVENIDOS A {RESTAURANTE.nombre.toUpperCase()}</p>
+                    <h1 className="titulo-fuego">{RESTAURANTE.lema}</h1>
+                    <p className="intro">Platillos hechos al momento, en un lugar para venir con la familia y los amigos.</p>
+                    <div className="actions"><Link className="button" href="/reservar">Reservar mesa</Link><Link className="text-link" href="/menu">Ver el menú →</Link></div>
+                </div>
+                <div className="hero-marca"><img src="/logo.png" alt="" width={344} height={193}/></div>
+            </div>
         </section>
-        <section className="section visit" id="visitanos">
-            <div><h2>Horario</h2><p>{RESTAURANTE.horario}</p></div>
-            {RESTAURANTE.direccion && <div><h2>Dónde estamos</h2><p>{RESTAURANTE.direccion}</p><a className="text-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(RESTAURANTE.direccion)}`} target="_blank" rel="noreferrer">Cómo llegar →</a></div>}
-            {whatsapp && <div><h2>Contacto</h2><a className="text-link" href={whatsapp} target="_blank" rel="noreferrer">Escríbenos por WhatsApp →</a></div>}
+
+        <div className="franja" aria-hidden="true"><div>{franja.map((f, i) => <span key={i}>{f}<b>✦</b></span>)}</div></div>
+
+        {destacados.length > 0 && <section className="section destacados">
+            <div className="destacados-head"><p className="eyebrow">DEL FUEGO A TU MESA</p><h2>Los favoritos de la casa</h2><Link className="text-link" href="/menu">Ver todo el menú →</Link></div>
+            <div className="destacados-grid">{destacados.map((p, i) => <article key={p.id} className="destacado">
+                <span className="destacado-num">0{i + 1}</span>
+                {p.foto_url && <img src={p.foto_url} alt={p.nombre} loading="lazy"/>}
+                <h3>{p.nombre}</h3>
+                {p.descripcion && <p>{p.descripcion}</p>}
+                <strong>{dinero(p.precio)}</strong>
+            </article>)}</div>
+        </section>}
+
+        <section className="section visitanos" id="visitanos">
+            <article className="tarjeta"><p className="eyebrow">HORARIO</p><h2>{RESTAURANTE.horario}</h2></article>
+            {RESTAURANTE.direccion && <article className="tarjeta"><p className="eyebrow">DÓNDE ESTAMOS</p><h2>{RESTAURANTE.direccion}</h2><a className="text-link" href={RESTAURANTE.mapa} target="_blank" rel="noreferrer">Cómo llegar →</a></article>}
+            {whatsapp && <article className="tarjeta"><p className="eyebrow">CONTACTO</p><h2>Escríbenos</h2><a className="text-link" href={whatsapp} target="_blank" rel="noreferrer">WhatsApp →</a></article>}
+            <Link href="/reservar" className="tarjeta tarjeta-fuego"><p className="eyebrow">¿VIENEN EN GRUPO?</p><h2>Aparta tu mesa</h2><span>Reservar →</span></Link>
         </section>
+        <div className="section">
+            <a className="mapa" href={RESTAURANTE.mapa} target="_blank" rel="noreferrer" aria-label={`Abrir ${RESTAURANTE.direccion} en Google Maps`}>
+                <iframe title={`Mapa: ${RESTAURANTE.direccion}`} src={`https://www.google.com/maps?q=${RESTAURANTE.coordenadas}&z=16&output=embed`} loading="lazy" tabIndex={-1}/>
+                <span className="mapa-pin" aria-hidden="true"/>
+            </a>
+        </div>
     </main>;
 }
