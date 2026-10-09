@@ -16,13 +16,19 @@ export const RESTAURANTE = {
     // Tarjetas de "Los favoritos de la casa" en la portada. El mismo límite está en supabase/schema.sql (limite_destacados).
     maxDestacados: 3,
     // Fotos del lugar que se muestran en la portada (las primeras según el orden de /admin → Galería).
-    maxGaleria: 12
+    maxGaleria: 12,
+    // Reseñas publicadas que se muestran en la portada (las más recientes).
+    resenasPortada: 3
 };
 
 export type Categoria = {id: number; nombre: string; orden: number};
 export type Platillo = {id: number; categoria_id: number; nombre: string; descripcion: string; precio: number; foto_url: string | null; disponible: boolean; destacado: boolean; orden: number};
 export type FotoGaleria = {id: number; foto_url: string; miniatura_url: string; descripcion: string; orden: number};
 export type Reservacion = {id: number; nombre: string; telefono: string; fecha: string; hora: string; personas: number; estado: string; notas: string; created_at: string};
+
+// platillos viene del join platillos(nombre); null cuando la reseña es sobre el lugar.
+export type Resena = {id: number; platillo_id: number | null; nombre: string; estrellas: number; comentario: string; estado: string; respuesta: string; respondida_at: string | null; created_at: string; platillos?: {nombre: string} | null};
+export const RESENA_COLUMNAS = "id,platillo_id,nombre,estrellas,comentario,estado,respuesta,respondida_at,created_at,platillos(nombre)";
 
 export const ESTADOS: Record<string, string> = {pendiente: "Pendiente", confirmada: "Confirmada", cancelada: "Cancelada", completada: "Completada", no_asistio: "No asistió"};
 
@@ -35,3 +41,7 @@ export const whatsappLink = (numero: string) => {
     const digitos = numero.replace(/\D/g, "");
     return digitos ? `https://wa.me/${digitos}` : null;
 };
+
+export const promedio = (estrellas: number[]) => estrellas.length ? Math.round(estrellas.reduce((a, b) => a + b, 0) / estrellas.length * 10) / 10 : 0;
+
+export const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString("es-CU", {day: "numeric", month: "short", year: "numeric", timeZone: RESTAURANTE.zonaHoraria});

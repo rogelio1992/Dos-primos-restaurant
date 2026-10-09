@@ -4,10 +4,11 @@ import {useRouter} from "next/navigation";
 import {getSupabaseClient} from "../../lib/supabase";
 import {comprimir, extension, rutaEnBucket} from "../../lib/imagenes";
 import GaleriaEditor from "./galeria";
+import ResenasEditor from "./resenas";
 import {Categoria, ESTADOS, Platillo, RESTAURANTE, Reservacion, dinero, hoy} from "../../lib/restaurante";
 
-type Vista = "reservaciones" | "menu" | "galeria";
-const VISTAS: Record<Vista, string> = {reservaciones: "Reservaciones", menu: "Menú", galeria: "Galería"};
+type Vista = "reservaciones" | "menu" | "galeria" | "resenas";
+const VISTAS: Record<Vista, string> = {reservaciones: "Reservaciones", menu: "Menú", galeria: "Galería", resenas: "Reseñas"};
 const vacio = {id: 0, categoria_id: 0, nombre: "", descripcion: "", precio: 0, foto_url: "", disponible: true, destacado: false, orden: 0};
 const BUCKET = "platillos";
 
@@ -41,6 +42,7 @@ export default function Admin() {
         {vista === "reservaciones" && <Reservaciones avisar={setAviso}/>}
         {vista === "menu" && <MenuEditor avisar={setAviso}/>}
         {vista === "galeria" && <GaleriaEditor avisar={setAviso}/>}
+        {vista === "resenas" && <ResenasEditor avisar={setAviso}/>}
     </main>;
 }
 

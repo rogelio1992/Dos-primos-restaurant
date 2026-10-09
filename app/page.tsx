@@ -1,9 +1,11 @@
 import Link from "next/link";
 import {getSupabasePublic} from "../lib/supabase-public";
-import {FotoGaleria, Platillo, RESTAURANTE, dinero, whatsappLink} from "../lib/restaurante";
+import {FotoGaleria, Platillo, RESENA_COLUMNAS, RESTAURANTE, Resena, dinero, promedio, whatsappLink} from "../lib/restaurante";
 import Brasas from "./brasas";
 import Mapa from "./mapa";
 import Galeria from "./galeria";
+import Estrellas from "./estrellas";
+import TarjetaResena from "./resenas/tarjeta";
 import {getAjustes} from "../lib/ajustes";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +15,19 @@ const FRASES = ["A la parrilla", "Hecho al momento", "Para compartir", "Sabor de
 export default async function Inicio() {
     const whatsapp = whatsappLink(RESTAURANTE.whatsapp);
     const {reservaciones_activas} = await getAjustes();
-    let destacados: Platillo[] = [], fotos: FotoGaleria[] = [];
+    let destacados: Platillo[] = [], fotos: FotoGaleria[] = [], resenas: Resena[] = [], estrellas: number[] = [];
     const db = getSupabasePublic();
     if (db) {
         const {data, error} = await db.from("platillos").select("id,categoria_id,nombre,descripcion,precio,foto_url,disponible,destacado,orden").eq("disponible", true).eq("destacado", true).order("orden").order("nombre").limit(RESTAURANTE.maxDestacados);
         if (!error && data) destacados = data;
         const galeria = await db.from("galeria").select("id,foto_url,miniatura_url,descripcion,orden").order("orden").order("id").limit(RESTAURANTE.maxGaleria);
         if (!galeria.error && galeria.data) fotos = galeria.data;
+        const [r, e] = await Promise.all([
+            db.from("resenas").select(RESENA_COLUMNAS).eq("estado", "publicada").order("created_at", {ascending: false}).limit(RESTAURANTE.resenasPortada),
+            db.from("resenas").select("estrellas").eq("estado", "publicada")
+        ]);
+        if (!r.error && r.data) resenas = r.data as unknown as Resena[];
+        if (!e.error && e.data) estrellas = e.data.map(x => x.estrellas);
     }
     const franja = [...FRASES, ...FRASES];
     return <main>
@@ -52,6 +60,14 @@ export default async function Inicio() {
         {fotos.length > 0 && <section className="section seccion-galeria" id="el-lugar">
             <div className="destacados-head"><p className="eyebrow">EL LUGAR</p><h2>Ven a conocernos</h2></div>
             <Galeria fotos={fotos}/>
+        </section>}
+
+        {resenas.length > 0 && <section className="section seccion-resenas">
+            <div className="destacados-head">
+                <p className="eyebrow">LO QUE DICEN</p><h2>Nuestros clientes</h2>
+                <div className="nota-portada"><strong>{promedio(estrellas).toFixed(1)}</strong><Estrellas valor={promedio(estrellas)}/><small>{estrellas.length} {estrellas.length === 1 ? "reseña" : "reseñas"}</small><Link className="text-link" href="/resenas">Ver todas y opinar →</Link></div>
+            </div>
+            <div className="resenas-portada">{resenas.map(r => <TarjetaResena key={r.id} r={r}/>)}</div>
         </section>}
 
         <section className="section visitanos" id="visitanos">

@@ -29,6 +29,8 @@ There is no test suite.
 
 **Site settings** live in the single-row table `ajustes` (read with `getAjustes()` from `lib/ajustes.ts`, cached per request; defaults to reservations on if the table is missing). When `reservaciones_activas` is false, every reservation entry point must disappear — header button, home hero/CTA, empty-menu link — `/reservar` redirects home, and `/api/reservaciones` returns 403. Any new link to `/reservar` needs the same check.
 
+**Reviews** (`resenas`) are inserted only through `/api/resenas` (service role, honeypot, 3 per hour per hashed IP) and start as `pendiente`; the public sees only `publicada` rows. `anon` has a column-level grant that excludes `ip_hash`, so public queries must list columns explicitly (use `RESENA_COLUMNAS`), never `select("*")`.
+
 **Images** live in public Storage buckets with admin-only writes (RLS on `storage.objects`): `platillos` (dish photos, ≤800 px) and `galeria` (venue photos, table `galeria`, stored twice: ≤1400 px full + ≤640 px `miniatura_url`). `/admin` compresses in the browser with `lib/imagenes.ts` before upload and deletes Storage objects when a photo is replaced or its row deleted. Public pages must show only the light version and load the full one on demand (the home gallery mosaic uses thumbnails; the full image loads only in the viewer) — many visitors are on expensive mobile data in Cuba.
 
 ## Environment

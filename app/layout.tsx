@@ -18,7 +18,7 @@ export default async function RootLayout({children}: Readonly<{children: React.R
     return <html lang="es" className={titulos.variable}><body>
         <header className="header">
             <Link href="/" className="brand"><img src="/logo.webp" alt={RESTAURANTE.nombre} width={344} height={193}/></Link>
-            <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link>{reservaciones_activas && <Link className="button" href="/reservar">Reservar mesa</Link>}</nav>
+            <nav aria-label="Navegación principal"><Link href="/menu">Menú</Link><Link href="/#visitanos">Visítanos</Link><Link href="/resenas">Reseñas</Link>{reservaciones_activas && <Link className="button" href="/reservar">Reservar mesa</Link>}</nav>
         </header>
         {children}
         <footer className="footer"><span>{RESTAURANTE.nombre} · {RESTAURANTE.lema}</span><Link href="/admin/login">Acceso administración</Link></footer>
