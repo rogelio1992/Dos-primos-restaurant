@@ -1,5 +1,12 @@
 "use client";
 import {useCallback, useEffect, useState} from "react";
+import {Eye, EyeOff, Inbox, MessageSquareReply, Send, Store, Trash2, Undo2, UtensilsCrossed} from "lucide-react";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
+import {Label} from "@/components/ui/label";
+import {Textarea} from "@/components/ui/textarea";
+import {cn} from "@/lib/utils";
 import {getSupabaseClient} from "../../lib/supabase";
 import {RESENA_COLUMNAS, Resena, fechaCorta} from "../../lib/restaurante";
 import Estrellas from "../estrellas";
@@ -51,27 +58,44 @@ export default function ResenasEditor({avisar}: {avisar: (texto: string) => void
         if (error) avisar("No se pudo borrar la reseña."); else cargar();
     }
 
-    return <section>
-        <nav className="tabs">{(Object.keys(FILTROS) as Filtro[]).map(f => <button key={f} className={f === filtro ? "active" : ""} onClick={() => setFiltro(f)}>
-            {FILTROS[f]} {conteo[f] ? <span className={f === "pendiente" ? "insignia" : ""}>{conteo[f]}</span> : null}
-        </button>)}</nav>
-        {lista.map(r => <article key={r.id} className="res resena-admin">
-            <Estrellas valor={r.estrellas}/>
-            <div>
-                <b>{r.nombre}</b> · {r.platillos?.nombre ?? "El lugar"} · <small>{fechaCorta(r.created_at)}</small>
-                <p>{r.comentario}</p>
-                <label>Tu respuesta (opcional, se publica debajo de la reseña)
-                    <textarea rows={2} maxLength={600} value={respuestas[r.id] ?? ""} onChange={e => setRespuestas({...respuestas, [r.id]: e.target.value})} placeholder="¡Gracias por visitarnos!…"/>
-                </label>
-                {(respuestas[r.id] ?? "") !== r.respuesta && <button className="text-link" onClick={() => responder(r)}>Guardar respuesta</button>}
-            </div>
-            <div className="resena-admin-acciones">
-                {r.estado !== "publicada" && <button className="button" onClick={() => cambiarEstado(r, "publicada")}>Publicar</button>}
-                {r.estado !== "oculta" && <button className="text-link" onClick={() => cambiarEstado(r, "oculta")}>Ocultar</button>}
-                {r.estado === "oculta" && <button className="text-link" onClick={() => cambiarEstado(r, "pendiente")}>A pendientes</button>}
-                <button className="text-link danger" onClick={() => borrar(r)}>Borrar</button>
-            </div>
-        </article>)}
-        {!lista.length && <p className="empty">{filtro === "pendiente" ? "No hay reseñas por revisar." : `No hay reseñas ${FILTROS[filtro].toLowerCase()}.`}</p>}
+    return <section className="flex flex-col gap-4">
+        <div role="tablist" aria-label="Filtrar reseñas" className="inline-flex w-fit gap-1 rounded-full border bg-muted p-1">
+            {(Object.keys(FILTROS) as Filtro[]).map(f => <button key={f} role="tab" aria-selected={f === filtro} onClick={() => setFiltro(f)}
+                className={cn("inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors", f === filtro ? "bg-fuego text-white shadow" : "text-muted-foreground hover:text-foreground")}>
+                {FILTROS[f]}
+                {conteo[f] ? <Badge className={cn("h-5 min-w-5 px-1.5 tabular-nums", f === filtro ? "bg-white/20 text-white" : f === "pendiente" ? "bg-rojo-texto text-white" : "bg-secondary text-secondary-foreground")}>{conteo[f]}</Badge> : null}
+            </button>)}
+        </div>
+
+        {lista.map(r => {
+            const borrador = respuestas[r.id] ?? "";
+            return <Card key={r.id} className="gap-4 py-5">
+                <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5">
+                    <Estrellas valor={r.estrellas}/>
+                    <span className="font-semibold">{r.nombre}</span>
+                    <Badge variant="outline" className="gap-1 text-muted-foreground">{r.platillos ? <UtensilsCrossed/> : <Store/>}{r.platillos?.nombre ?? "El lugar"}</Badge>
+                    <span className="ml-auto text-xs text-muted-foreground">{fechaCorta(r.created_at)}</span>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 px-5">
+                    <p className="m-0 leading-relaxed whitespace-pre-line">{r.comentario}</p>
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor={`respuesta-${r.id}`} className="text-muted-foreground"><MessageSquareReply className="size-3.5"/>Tu respuesta (opcional, se publica debajo de la reseña)</Label>
+                        <Textarea id={`respuesta-${r.id}`} maxLength={600} value={borrador} onChange={e => setRespuestas({...respuestas, [r.id]: e.target.value})} placeholder="¡Gracias por visitarnos!…" className="min-h-16 resize-none"/>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {r.estado !== "publicada" && <Button size="sm" onClick={() => cambiarEstado(r, "publicada")}><Eye/>Publicar{borrador.trim() && borrador.trim() !== r.respuesta ? " con respuesta" : ""}</Button>}
+                        {borrador !== r.respuesta && r.estado === "publicada" && <Button size="sm" onClick={() => responder(r)}><Send/>Guardar respuesta</Button>}
+                        {borrador !== r.respuesta && r.estado !== "publicada" && <Button size="sm" variant="secondary" onClick={() => responder(r)}>Guardar respuesta</Button>}
+                        {r.estado !== "oculta" && <Button size="sm" variant="outline" onClick={() => cambiarEstado(r, "oculta")}><EyeOff/>Ocultar</Button>}
+                        {r.estado === "oculta" && <Button size="sm" variant="outline" onClick={() => cambiarEstado(r, "pendiente")}><Undo2/>A pendientes</Button>}
+                        <Button size="sm" variant="ghost" className="ml-auto text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => borrar(r)}><Trash2/>Borrar</Button>
+                    </div>
+                </CardContent>
+            </Card>;
+        })}
+        {!lista.length && <Card className="items-center gap-2 border-dashed py-10 text-center text-muted-foreground">
+            <Inbox className="size-8"/>
+            <p className="m-0">{filtro === "pendiente" ? "No hay reseñas por revisar." : `No hay reseñas ${FILTROS[filtro].toLowerCase()}.`}</p>
+        </Card>}
     </section>;
 }
