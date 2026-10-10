@@ -222,7 +222,9 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- Formularios y administración ---------- */
 .card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
-.form.card::before { content: ""; position: absolute; inset: -1px -1px auto; height: 3px; border-radius: 18px 18px 0 0; background: var(--fuego); }
+/* Borde superior con degradado que sigue la curva de las esquinas: el degradado ocupa toda la tarjeta y la máscara deja visible solo los 3px de arriba (padding-top). */
+.form.card::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding-top: 3px; background: linear-gradient(90deg, #ff9a3c, #f0614f 45%, #b3141f); pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 .form { display: grid; gap: 16px; }
 .form .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
