@@ -1,6 +1,12 @@
 "use client";
 import {FormEvent, useState} from "react";
 
+// Ajusta la altura del comentario a lo escrito (para navegadores sin field-sizing de CSS).
+function ajustarAlto(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`;
+}
+
 export default function FormularioResena({platillos, inicial}: {platillos: {id: number; nombre: string}[]; inicial: string}) {
     const [estrellas, setEstrellas] = useState(0), [sobre, setSobre] = useState(inicial);
     const [mensaje, setMensaje] = useState(""), [enviando, setEnviando] = useState(false), [listo, setListo] = useState(false);
@@ -16,7 +22,7 @@ export default function FormularioResena({platillos, inicial}: {platillos: {id: 
             const datos = {...Object.fromEntries(new FormData(form)), estrellas, platillo_id: sobre || null};
             const response = await fetch("/api/resenas", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(datos)});
             const result = await response.json();
-            if (response.ok && result.ok) { form.reset(); setEstrellas(0); setListo(true); setMensaje("¡Gracias por tu reseña! La publicaremos en cuanto la revisemos."); }
+            if (response.ok && result.ok) { form.reset(); form.querySelectorAll("textarea").forEach(t => { t.style.height = ""; }); setEstrellas(0); setListo(true); setMensaje("¡Gracias por tu reseña! La publicaremos en cuanto la revisemos."); }
             else setMensaje(result.error || "No se pudo enviar la reseña.");
         } catch { setMensaje("No se pudo conectar. Inténtalo nuevamente."); }
         finally { setEnviando(false); }
@@ -37,7 +43,7 @@ export default function FormularioResena({platillos, inicial}: {platillos: {id: 
             <small>{TEXTOS[estrellas] || "Toca las estrellas"}</small>
         </fieldset>
         <label>Tu nombre<input required name="nombre" maxLength={60} placeholder="Como quieres que aparezca"/></label>
-        <label>Comentario<textarea required name="comentario" minLength={5} maxLength={600} rows={4} placeholder="¿Qué te gustó? ¿Qué podemos mejorar?"/></label>
+        <label>Comentario<textarea className="auto-alto" required name="comentario" minLength={5} maxLength={600} rows={4} placeholder="¿Qué te gustó? ¿Qué podemos mejorar?" onInput={e => ajustarAlto(e.currentTarget)}/></label>
         <input className="honeypot" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"/>
         <button className="button" disabled={enviando}>{enviando ? "Enviando…" : "Enviar reseña"}</button>
         {mensaje && <p className={listo ? "notice ok" : "notice"} role="status">{mensaje}</p>}

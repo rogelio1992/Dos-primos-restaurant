@@ -228,6 +228,8 @@ button { font: inherit; cursor: pointer; }
 label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
 label.check { display: flex; align-items: center; gap: 8px; }
 input, select, textarea { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; }
+/* Textarea que crece con el texto: sin esquina para arrastrar; mínimo ~4 líneas. */
+.auto-alto { resize: none; overflow: hidden; field-sizing: content; min-height: calc(4lh + 22px); }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-text); outline-offset: -1px; border-color: transparent; }
 input[type=checkbox] { width: auto; accent-color: var(--accent); }
 .honeypot { position: absolute; left: -9999px; }
