@@ -5,6 +5,7 @@ import {Card, CardContent} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import Estrellas from "../estrellas";
 import FormularioResena from "./formulario";
+import type {OpcionPlatillo} from "./selector-platillo";
 import TarjetaResena from "./tarjeta";
 import TransicionPagina from "../transicion-pagina";
 
@@ -13,17 +14,21 @@ export const metadata = {title: "Reseñas | Dos Primos"};
 
 export default async function Resenas({searchParams}: {searchParams: Promise<{platillo?: string}>}) {
     const {platillo} = await searchParams;
-    let resenas: Resena[] = [], platillos: {id: number; nombre: string}[] = [], todas: number[] = [];
+    let resenas: Resena[] = [], platillos: OpcionPlatillo[] = [], todas: number[] = [];
     const db = getSupabasePublic();
     if (db) {
         const [r, p, e] = await Promise.all([
             db.from("resenas").select(RESENA_COLUMNAS).eq("estado", "publicada").order("created_at", {ascending: false}).limit(60),
-            db.from("platillos").select("id,nombre").eq("disponible", true).order("nombre"),
+            db.from("platillos").select("id,nombre,categorias(nombre,orden)").eq("disponible", true).order("nombre"),
             // Solo las estrellas de todas las publicadas, para el promedio y la gráfica (la lista se corta en 60).
             db.from("resenas").select("estrellas").eq("estado", "publicada")
         ]);
         if (!r.error && r.data) resenas = r.data as unknown as Resena[];
-        if (!p.error && p.data) platillos = p.data;
+        // Para el combobox: agrupados por categoría, en el mismo orden que el menú.
+        if (!p.error && p.data) platillos = (p.data as unknown as {id: number; nombre: string; categorias: {nombre: string; orden: number} | null}[])
+            .map(x => ({id: x.id, nombre: x.nombre, categoria: x.categorias?.nombre ?? "Otros", orden: x.categorias?.orden ?? 999}))
+            .sort((a, b) => a.orden - b.orden || a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre, "es"))
+            .map(({orden, ...resto}) => resto);
         if (!e.error && e.data) todas = e.data.map(x => x.estrellas);
     }
     const media = promedio(todas);

@@ -6,9 +6,9 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
-import {NativeSelect, NativeSelectOption} from "@/components/ui/native-select";
 import {Textarea} from "@/components/ui/textarea";
 import {cn} from "@/lib/utils";
+import SelectorPlatillo, {OpcionPlatillo} from "./selector-platillo";
 
 const TEXTOS = ["", "Malo", "Regular", "Bueno", "Muy bueno", "¡Excelente!"];
 
@@ -19,7 +19,7 @@ function ajustarAlto(el: HTMLTextAreaElement) {
     el.style.height = `${el.scrollHeight + 2}px`;
 }
 
-export default function FormularioResena({platillos, inicial}: {platillos: {id: number; nombre: string}[]; inicial: string}) {
+export default function FormularioResena({platillos, inicial}: {platillos: OpcionPlatillo[]; inicial: string}) {
     const [estrellas, setEstrellas] = useState(0), [encima, setEncima] = useState(0), [sobre, setSobre] = useState(inicial);
     const [mensaje, setMensaje] = useState(""), [enviando, setEnviando] = useState(false), [listo, setListo] = useState(false);
     const mostradas = encima || estrellas;
@@ -49,10 +49,7 @@ export default function FormularioResena({platillos, inicial}: {platillos: {id: 
             <form className="flex flex-col gap-5" onSubmit={enviar} onChange={() => listo && setListo(false)}>
                 <div className="flex flex-col gap-2">
                     <Label htmlFor="resena-sobre">¿Sobre qué quieres opinar?</Label>
-                    <NativeSelect id="resena-sobre" wrapperClassName="w-full" className="h-11" value={sobre} onChange={e => setSobre(e.target.value)}>
-                        <NativeSelectOption value="">El lugar en general</NativeSelectOption>
-                        {platillos.map(p => <NativeSelectOption key={p.id} value={p.id}>{p.nombre}</NativeSelectOption>)}
-                    </NativeSelect>
+                    <SelectorPlatillo id="resena-sobre" platillos={platillos} valor={sobre} onChange={setSobre}/>
                 </div>
 
                 <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
