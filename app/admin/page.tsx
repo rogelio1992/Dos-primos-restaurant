@@ -121,6 +121,17 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
         if (error) avisar("No se pudo crear la categoría."); else { form.reset(); cargar(); }
     }
 
+    // Intercambia el orden con la categoría vecina: así cambia también el orden en /menu y en las pestañas de categorías.
+    async function moverCategoria(i: number, paso: -1 | 1) {
+        const a = categorias[i], b = categorias[i + paso];
+        if (!a || !b) return;
+        // Si dos categorías tienen el mismo orden, separarlas para que el intercambio tenga efecto.
+        const [ordenA, ordenB] = a.orden === b.orden ? [b.orden + paso, a.orden] : [b.orden, a.orden];
+        const r = await Promise.all([db.from("categorias").update({orden: ordenA}).eq("id", a.id), db.from("categorias").update({orden: ordenB}).eq("id", b.id)]);
+        if (r.some(x => x.error)) avisar("No se pudo cambiar el orden de las categorías.");
+        cargar();
+    }
+
     async function borrarCategoria(c: Categoria) {
         if (platillos.some(p => p.categoria_id === c.id)) return avisar("Primero mueve o borra los platillos de esa categoría.");
         if (!confirm(`¿Borrar la categoría ${c.nombre}?`)) return;
@@ -180,8 +191,11 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
     return <section>
         <p className="contador-destacados">★ Destacados en la portada: <b>{totalDestacados} de {RESTAURANTE.maxDestacados}</b></p>
         <form className="toolbar" onSubmit={nuevaCategoria}><label>Nueva categoría<input name="nombre" placeholder="Ej. Tacos"/></label><button className="button">Agregar</button></form>
-        {categorias.map(c => <div key={c.id} className="category">
-            <div className="admin-head"><h2>{c.nombre}</h2><div><button className="text-link" onClick={() => abrir({...vacio, categoria_id: c.id})}>+ Platillo</button> <button className="text-link danger" onClick={() => borrarCategoria(c)}>Borrar</button></div></div>
+        {categorias.map((c, i) => <div key={c.id} className="category">
+            <div className="admin-head"><h2>{c.nombre}</h2><div className="categoria-acciones">
+                <button className="text-link" disabled={i === 0} onClick={() => moverCategoria(i, -1)} aria-label={`Subir ${c.nombre}`} title="Subir en el menú">↑</button>
+                <button className="text-link" disabled={i === categorias.length - 1} onClick={() => moverCategoria(i, 1)} aria-label={`Bajar ${c.nombre}`} title="Bajar en el menú">↓</button>
+                <button className="text-link" onClick={() => abrir({...vacio, categoria_id: c.id})}>+ Platillo</button> <button className="text-link danger" onClick={() => borrarCategoria(c)}>Borrar</button></div></div>
             {platillos.filter(p => p.categoria_id === c.id).map(p => <article key={p.id} className={p.disponible ? "res" : "res cancelada"}>
                 <strong>{dinero(p.precio)}</strong>
                 <div className="platillo-admin">{p.foto_url && <img src={p.foto_url} alt="" loading="lazy"/>}<div><b>{p.nombre}</b>{p.destacado && <span className="insignia">★ Destacado</span>}{!p.disponible && " · No disponible"}{p.descripcion && <p>{p.descripcion}</p>}</div></div>
