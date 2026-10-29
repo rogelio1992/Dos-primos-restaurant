@@ -8,6 +8,8 @@ import Estrellas from "./estrellas";
 import TarjetaResena from "./resenas/tarjeta";
 import {getAjustes} from "../lib/ajustes";
 import TransicionPagina from "./transicion-pagina";
+import {temporadaActual} from "../lib/temporada";
+import {CAMPANA, DecoracionHero, HeroHalloween} from "./halloween";
 
 export const dynamic = "force-dynamic";
 
@@ -30,17 +32,20 @@ export default async function Inicio() {
         if (!r.error && r.data) resenas = r.data as unknown as Resena[];
         if (!e.error && e.data) estrellas = e.data.map(x => x.estrellas);
     }
-    const franja = [...FRASES, ...FRASES];
+    const halloween = temporadaActual() === "halloween";
+    const franja = halloween ? [...CAMPANA.frases, ...CAMPANA.frases] : [...FRASES, ...FRASES];
+    const acciones = reservaciones_activas ? <><Link className="button" href="/reservar">Reservar mesa</Link><Link className="text-link" href="/menu">Ver el menú →</Link></> : <Link className="button" href="/menu">Ver el menú</Link>;
     return <TransicionPagina><main>
         <section className="hero-fuego">
             <Brasas/>
+            {halloween && <DecoracionHero/>}
             <div className="hero-inner">
-                <div className="hero-texto">
+                {halloween ? <HeroHalloween acciones={acciones}/> : <div className="hero-texto">
                     <p className="eyebrow">BIENVENIDOS A {RESTAURANTE.nombre.toUpperCase()}</p>
                     <h1 className="titulo-fuego">{RESTAURANTE.lema}</h1>
                     <p className="intro">Platillos hechos al momento, en un lugar para venir con la familia y los amigos.</p>
-                    <div className="actions">{reservaciones_activas ? <><Link className="button" href="/reservar">Reservar mesa</Link><Link className="text-link" href="/menu">Ver el menú →</Link></> : <Link className="button" href="/menu">Ver el menú</Link>}</div>
-                </div>
+                    <div className="actions">{acciones}</div>
+                </div>}
                 <div className="hero-marca"><img src="/logo.webp" alt="" width={344} height={193}/></div>
             </div>
         </section>
