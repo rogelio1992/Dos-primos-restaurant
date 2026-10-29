@@ -23,6 +23,8 @@ export const RESTAURANTE = {
 
 export type Categoria = {id: number; nombre: string; orden: number};
 export type Platillo = {id: number; categoria_id: number; nombre: string; descripcion: string; precio: number; foto_url: string | null; disponible: boolean; destacado: boolean; orden: number};
+// Ingrediente extra de una categoría (p. ej. jamón para las pizzas); precio en CUP que se suma al platillo.
+export type Agrego = {id: number; categoria_id: number; nombre: string; precio: number; disponible: boolean; orden: number};
 export type FotoGaleria = {id: number; foto_url: string; miniatura_url: string; descripcion: string; orden: number};
 export type Reservacion = {id: number; nombre: string; telefono: string; fecha: string; hora: string; personas: number; estado: string; notas: string; created_at: string};
 

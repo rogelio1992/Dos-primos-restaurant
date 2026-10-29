@@ -5,7 +5,8 @@ import {getSupabaseClient} from "../../lib/supabase";
 import {comprimir, extension, rutaEnBucket} from "../../lib/imagenes";
 import GaleriaEditor from "./galeria";
 import ResenasEditor from "./resenas";
-import {Categoria, ESTADOS, Platillo, RESTAURANTE, Reservacion, dinero, hoy} from "../../lib/restaurante";
+import AgregosCategoria from "./agregos";
+import {Agrego, Categoria, ESTADOS, Platillo, RESTAURANTE, Reservacion, dinero, hoy} from "../../lib/restaurante";
 
 type Vista = "reservaciones" | "menu" | "galeria" | "resenas";
 const VISTAS: Record<Vista, string> = {reservaciones: "Reservaciones", menu: "Menú", galeria: "Galería", resenas: "Reseñas"};
@@ -96,7 +97,7 @@ function Reservaciones({avisar}: {avisar: (texto: string) => void}) {
 
 function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
     const db = getSupabaseClient()!;
-    const [categorias, setCategorias] = useState<Categoria[]>([]), [platillos, setPlatillos] = useState<Platillo[]>([]);
+    const [categorias, setCategorias] = useState<Categoria[]>([]), [platillos, setPlatillos] = useState<Platillo[]>([]), [agregos, setAgregos] = useState<Agrego[]>([]);
     const [editando, setEditando] = useState<typeof vacio | null>(null);
     const [archivo, setArchivo] = useState<File | null>(null), [guardando, setGuardando] = useState(false);
     const vistaPrevia = useMemo(() => archivo ? URL.createObjectURL(archivo) : null, [archivo]);
@@ -105,9 +106,10 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
     const otrosDestacados = platillos.filter(p => p.destacado && p.id !== editando?.id).length;
     const limiteLleno = otrosDestacados >= RESTAURANTE.maxDestacados;
     const cargar = useCallback(async () => {
-        const [c, p] = await Promise.all([db.from("categorias").select("*").order("orden").order("nombre"), db.from("platillos").select("*").order("orden").order("nombre")]);
+        const [c, p, a] = await Promise.all([db.from("categorias").select("*").order("orden").order("nombre"), db.from("platillos").select("*").order("orden").order("nombre"), db.from("agregos").select("*").order("orden").order("id")]);
         if (c.error || p.error) return avisar("No se pudo cargar el menú.");
-        setCategorias(c.data); setPlatillos(p.data);
+        // Sin la tabla de agregos (SQL sin ejecutar) el resto del menú sigue funcionando.
+        setAgregos(a.error ? [] : a.data); setCategorias(c.data); setPlatillos(p.data);
     }, [db, avisar]);
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -185,6 +187,7 @@ function MenuEditor({avisar}: {avisar: (texto: string) => void}) {
                 <div className="platillo-admin">{p.foto_url && <img src={p.foto_url} alt="" loading="lazy"/>}<div><b>{p.nombre}</b>{p.destacado && <span className="insignia">★ Destacado</span>}{!p.disponible && " · No disponible"}{p.descripcion && <p>{p.descripcion}</p>}</div></div>
                 <div><button className="text-link" onClick={() => abrir({...p, foto_url: p.foto_url ?? ""})}>Editar</button> <button className="text-link danger" onClick={() => borrarPlatillo(p)}>Borrar</button></div>
             </article>)}
+            <AgregosCategoria categoria={c} agregos={agregos.filter(a => a.categoria_id === c.id)} avisar={avisar} recargar={cargar}/>
         </div>)}
         {editando && <div className="modal" role="dialog" aria-modal="true"><form className="card form" onSubmit={guardar}>
             <h2>{editando.id ? "Editar platillo" : "Nuevo platillo"}</h2>

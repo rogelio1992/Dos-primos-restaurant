@@ -261,6 +261,15 @@ button { font: inherit; cursor: pointer; }
 .dish:hover { transform: translateY(-4px); border-color: rgba(240, 97, 79, .45); box-shadow: 0 18px 40px -22px rgba(240, 97, 79, .6); }
 .dish img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
 /* min-width: 0 deja que el texto se ajuste al ancho de la tarjeta en vez de empujar el precio hacia afuera. */
+/* Foto del platillo: se toca para verla en grande (app/menu/foto-platillo.tsx). El icono de lupa avisa en el celular, donde no hay hover. */
+.dish-foto { position: relative; flex-shrink: 0; align-self: flex-start; padding: 0; border: 0; background: none; border-radius: 12px; cursor: zoom-in; }
+.dish-foto img { display: block; transition: filter .2s; }
+.dish-foto:hover img { filter: brightness(1.1); }
+.dish-foto:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.dish-foto::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(10, 8, 7, .7) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.5-4.5M11 8v6M8 11h6'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.visor-titulo { color: var(--ink); }
+/* Las fotos de platillos miden hasta 800 px: no estirarlas más allá de su tamaño real. */
+.visor-platillo { max-width: 800px; }
 .dish-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dish h3 { font-size: 18px; margin: 0; overflow-wrap: anywhere; }
 .dish p { margin: 6px 0 0; color: var(--apagado); font-size: 14px; }
@@ -285,6 +294,22 @@ input[type=checkbox] { width: auto; accent-color: var(--rojo); }
 .honeypot { position: absolute; left: -9999px; }
 .notice { margin: 12px 0; padding: 12px 14px; border-radius: 8px; background: #3a1714; border: 1px solid #6b221c; }
 .notice.ok { background: #16301d; border-color: #2c5a37; }
+
+/* Agregos de una categoría (p. ej. pizzas): chips con el precio extra debajo de sus platillos. */
+.agregos { margin-top: 18px; padding: 18px 20px; border-radius: 16px; border: 1px dashed rgba(240, 97, 79, .45); background: linear-gradient(135deg, rgba(255, 154, 60, .07), transparent 60%), var(--surface); }
+.agregos h3 { font-size: 16px; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 12px; }
+.agregos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.agregos li { display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); font-size: 14px; }
+.agregos li b { font-size: 13px; color: var(--accent-text); white-space: nowrap; }
+.agregos-abrir { display: inline-block; margin-top: 12px; }
+.agregos-admin { margin-top: 14px; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 12px; }
+.agregos-admin h3 { font-size: 16px; margin: 0 0 10px; }
+.agregos-admin h3 small { font: 13px system-ui, sans-serif; color: var(--apagado); text-transform: none; }
+.agrego-fila { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 8px 18px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.agrego-fila.agotado > :first-child, .agrego-fila.agotado b { opacity: .5; text-decoration: line-through; }
+.agrego-form { margin: 12px 0 0; }
+.agrego-form input[type=number] { width: 120px; }
+@media (max-width: 640px) { .agrego-fila { grid-template-columns: 1fr auto; } }
 
 .admin-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .tabs { display: flex; gap: 8px; margin: 16px 0 24px; }
